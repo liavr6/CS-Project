@@ -6,3 +6,4 @@ Assembler/x64
 simulator/sim/.vs
 simulator/sim/sim/Debug
 simulator/sim/Debug
+*.vcxproj*
