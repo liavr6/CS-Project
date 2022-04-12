@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 	
 	//split poc
 	int size;
-	char** splits1 = split(a, &size);
+	char** splits1 = split(a, &size, ',');
 	for (int i = 0; i < size; i++)
 	{
 		printf("%s ",splits1[i]);
@@ -49,7 +49,7 @@ void remove_char(char *str, char target)
 	*dst = '\0';
 }
 //split the command line to its parts
-char** split(char* mainstring, int* size_top_arr)
+char** split(char* mainstring, int* size_top_arr,char del)
 {	
 	//string to substrings allocations
 	(*size_top_arr) = 1;
@@ -60,7 +60,7 @@ char** split(char* mainstring, int* size_top_arr)
 	// seperation of other token
 	while (symb != NULL && symb[0] != '#')
 	{
-		remove_char(symb, ',');
+		remove_char(symb, del);
 		splits[(*size_top_arr) - 1] = symb;
 		(*size_top_arr)++;
 		splits = (char**)realloc(splits, sizeof(char*) * (*size_top_arr));
