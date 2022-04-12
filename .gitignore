@@ -1,0 +1,8 @@
+Assembler/.vs/*
+Assembler/Ass/Debug/*
+Assembler/Ass/x64
+Assembler/Debug
+Assembler/x64
+simulator/sim/.vs
+simulator/sim/sim/Debug
+simulator/sim/Debug
