@@ -4,6 +4,30 @@
 #include "Ass_Main.h"
 #include <stdlib.h>
 
+label* create_label()
+{
+	label* result = NULL;
+	
+	result = (label*)malloc(sizeof(*result));
+	if (NULL == result)
+	{
+		return NULL;
+	}
+
+	result->name = NULL;
+	result->pc = 0;
+
+	return result;
+}
+
+void destry_label(label* x)
+{
+	if (x != NULL)
+	{
+		free(x);
+	}
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -13,17 +37,38 @@ int main(int argc, char *argv[])
 		exit(1);
 	}*/
 	char a[] = "	add $t2, $zero, $imm, 1				# $t2 = 1";
-	char test_label[] = "fib:";
+	char test_label[] = "fib:allaakbar";
+	char *copy_this = test_label;
+
+	size_t size2 = strlen(copy_this);
 
 	//find label poc
-	int pc = 0;
-	label* test = (label*)malloc(sizeof(label));
-	char* chartest = (char*)malloc(sizeof(char)*500);
+	char* chartest = (char*)malloc(sizeof(*chartest)*(size2 + 1));
+	strcpy(chartest, copy_this);
+
+	int pc = 0;	
 	remove_char(test_label, ':');
-	test->pc = pc;
-	strcpy(chartest, test_label);//i don't like the implementation of test->name [255]
+
+	label* test = (label*)malloc(sizeof(label));
+	memset(test, 0, sizeof*(test));
+
 	test->name = chartest;
-	
+	test->pc = pc;
+
+	label** testa = (label**)malloc(sizeof(label*));
+	if (testa == NULL)
+	{
+		exit(1);
+	}
+	testa = malloc(0);
+	for (int i = 0; i < 10; i++)
+	{
+		testa = AddLabelToArray(testa, i, test_label, i);
+	}
+
+	//write to file poc
+	char fname[] = "test1.txt";
+	write_file(fname, a);
 	
 	//split poc
 	int size;
@@ -34,11 +79,14 @@ int main(int argc, char *argv[])
 	}
 	//dont forget to free the splits later
 }
+
+#pragma region shit
+
 //needed in order to remove commas
-void remove_char(char *str, char target) 
+void remove_char(char *str, char target)
 {
 	char *src, *dst;
-	for (src = dst = str; *src != '\0'; src++) 
+	for (src = dst = str; *src != '\0'; src++)
 	{
 		*dst = *src;
 		if (*dst != target)
@@ -49,8 +97,8 @@ void remove_char(char *str, char target)
 	*dst = '\0';
 }
 //split the command line to its parts
-char** split(char* mainstring, int* size_top_arr,char del)
-{	
+char** split(char* mainstring, int* size_top_arr, char del)
+{
 	//string to substrings allocations
 	(*size_top_arr) = 1;
 	char** splits;
@@ -71,6 +119,8 @@ char** split(char* mainstring, int* size_top_arr,char del)
 }
 
 //function to read input files
+
+//think about changing inputs
 int read_file(FILE *fpointer, char chmod, char filename[])
 {
 	fpointer = fopen(filename, chmod);
@@ -79,4 +129,34 @@ int read_file(FILE *fpointer, char chmod, char filename[])
 		printf("Error: reading file %s was problematic.", filename);
 		return 1;
 	}
+}
+//function to write output files
+void write_file(char *filename, char *strtowrite)
+{
+	// open file for writing
+	FILE *fp = fopen(filename, "w");
+	if (fp == NULL)
+	{
+		fp = fopen(filename, "wb");
+		//printf("Error opening file %s", filename);
+		//return 1;
+	}
+	// write to text file
+	fprintf(fp, strtowrite);
+
+	// close file
+	fclose(fp);
+}
+
+#pragma endregion
+
+label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int pc) {
+	// create a new label struct
+	label* nlabel = (label*)malloc(sizeof(label));
+	nlabel->name = (char*)malloc(sizeof(labelname));
+	nlabel->pc = pc;
+	strcpy(nlabel->name, labelname);
+	labelarray = (label**)realloc(labelarray, sizeof(label*)*(array_size+1));
+	labelarray[array_size] = nlabel;
+	return labelarray;
 }
