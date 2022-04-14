@@ -66,9 +66,22 @@ int main(int argc, char *argv[])
 		testa = AddLabelToArray(testa, i, test_label, i);
 	}
 
-	//write to file poc
+	//read file poc
+	FILE* fp = NULL;
+	char rfname[] = "..\\fib.asm";//relative path of file to read
+	fp = read_file(rfname,"r");
+
+	char line[500];
 	char fname[] = "test1.txt";
-	write_file(fname, a);
+	fclose(fopen(fname, "w+"));
+	while (fgets(line, sizeof(line), fp)) {
+		printf("%s", line);
+		//write to file poc
+		write_file(fname, line);
+	}
+	fclose(fp);
+
+
 	
 	//split poc
 	int size;
@@ -121,26 +134,28 @@ char** split(char* mainstring, int* size_top_arr, char del)
 //function to read input files
 
 //think about changing inputs
-int read_file(FILE *fpointer, char chmod, char filename[])
+FILE* read_file(char filename[], char chmod)
 {
-	fpointer = fopen(filename, chmod);
+	static FILE *fpointer;
+	fpointer = fopen(filename, "r");
 	if (fpointer == NULL)
 	{
 		printf("Error: reading file %s was problematic.", filename);
-		return 1;
+		return NULL;
 	}
+	return fpointer;
 }
 //function to write output files
 void write_file(char *filename, char *strtowrite)
 {
 	// open file for writing
-	FILE *fp = fopen(filename, "w");
-	if (fp == NULL)
-	{
-		fp = fopen(filename, "wb");
-		//printf("Error opening file %s", filename);
-		//return 1;
-	}
+	FILE *fp = fopen(filename, "a+");
+	//if (fp == NULL)
+	//{
+	//	fp = fopen(filename, "wb");
+	//	//printf("Error opening file %s", filename);
+	//	//return 1;
+	//}
 	// write to text file
 	fprintf(fp, strtowrite);
 
@@ -148,7 +163,7 @@ void write_file(char *filename, char *strtowrite)
 	fclose(fp);
 }
 
-#pragma endregion
+
 
 label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int pc) {
 	// create a new label struct
@@ -160,3 +175,4 @@ label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int
 	labelarray[array_size] = nlabel;
 	return labelarray;
 }
+#pragma endregion

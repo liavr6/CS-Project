@@ -2,8 +2,7 @@
 char** split(char* mainstring, int* size_top_arr, char del);
 void remove_char(char *str, char target);
 void write_file(char *filename, char *strtowrite);
-int read_file(FILE *fpointer, char chmod, char filename[]);
-
+FILE* read_file(char filename[], char chmod);
 typedef struct s_label {
 	char* name;
 	int pc;
