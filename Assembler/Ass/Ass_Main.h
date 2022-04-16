@@ -7,7 +7,8 @@ typedef struct s_label {
 	char* name;
 	int pc;
 } label;
-
+char *opcodes[22] = { "add", "sub", "mul", "and", "or", "xor", "sll", "sra", "srl", "beq", "bne", "blt", "bgt", "ble", "bge", "jal", "lw", "sw", "reti", "in", "out", "halt" };
+char *registers[16] = { "$zero", "$imm", "$v0", "$a0", "$a1", "$a2", "$a3", "$t0", "$t1", "$t2", "$s0", "$s1", "$s2", "$gp", "$sp", "$ra" };
 label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int pc);
 label* create_label();
 void destry_label(label* x);
