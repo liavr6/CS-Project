@@ -31,11 +31,16 @@ void destry_label(label* x)
 
 int main(int argc, char *argv[])
 {
+#pragma region poc
+
 	// Test to validate of file num from input command.
 	/*if (argc != 4) {
 		printf("Error: incorrect number of input files - 4 required\nExiting.");
 		exit(1);
 	}*/
+
+	/*
+
 	char a[] = "	add $t2, $zero, $imm, 1				# $t2 = 1";
 	char test_label[] = "fib:allaakbar";
 	char *copy_this = test_label;
@@ -90,11 +95,26 @@ int main(int argc, char *argv[])
 	}
 	//dont forget to free the splits later
 
+	*/
+#pragma endregion
+		// Test to validate of file num from input command.
+	if (argc != 4) {
+		printf("Error: incorrect number of input files - 4 required\nExiting.");
+		exit(1);
+	}
+	char rfname[] = { argv[1] };
+	label** labelsarray = (label**)malloc(sizeof(label*));
+	if (labelsarray == NULL){exit(1);}
+	labelsarray = malloc(0);
+	find_labels(rfname, labelsarray);
+	create_memin(opcodes[22], registers[16], rfname);
+	free_array(labelsarray);
 
-	/*1.read_file(asm)
-	2.find_labels(file)
-	3.create_memin(file,labels)
-	4.free memory*/
+
+	/*1.read_file(asm) v
+	2.find_labels(file) v
+	3.create_memin(file,labels) v
+	4.free memory v */
 }
 
 #pragma region shit
@@ -264,4 +284,13 @@ void create_memin(char* opcodes[22], char* registers[16], char* file_name)
 	}
 }
 
+void free_array(label** labels)
+{
+	size_t n = sizeof(labels) / sizeof(labels[0]);
+	for (int i = 0; i < n; i++) {
+		free(labels[i]->name);
+		free(labels[i]);
+	}
+	free(labels);
+}
 #pragma endregion
