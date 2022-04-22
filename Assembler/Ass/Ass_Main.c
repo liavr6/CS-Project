@@ -98,6 +98,7 @@ int main(int argc, char *argv[])
 	*/
 #pragma endregion
 		// Test to validate of file num from input command.
+
 	if (argc != 4) {
 		printf("Error: incorrect number of input files - 4 required\nExiting.");
 		exit(1);
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
 	if (labelsarray == NULL){exit(1);}
 	labelsarray = malloc(0);
 	find_labels(rfname, labelsarray);
-	create_memin(opcodes[22], registers[16], rfname);
+	create_memin(opcodes[22], registers[16], rfname,argv[2]);
 	free_array(labelsarray);
 
 
@@ -160,7 +161,9 @@ char** split(char* mainstring, int* size_top_arr, char del)
 FILE* read_file(char filename[], char chmod)
 {
 	static FILE *fpointer;
-	fpointer = fopen(filename, "r");
+	//fpointer = fopen(filename, "r");
+
+	fpointer = fopen(filename, chmod);
 	if (fpointer == NULL)
 	{
 		printf("Error: reading file %s was problematic.", filename);
@@ -242,18 +245,22 @@ int is_str_in_array(char* array[], char* str, int length) //return the opcode/re
 }
 
 //func to create data for the final output file and writes it to the file
-void create_memin(char* opcodes[22], char* registers[16], char* file_name)
+void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, char* out_file_name)
 {
 	int size;
 	char line[500], memin_line[10] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };//initialize again in the while******
 	char temp[10] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };//initialize again in the while******
 	FILE *fp1;
-	fp1 = fopen(file_name, "r");
+	fp1 = fopen(in_file_name, "r");
 	if (fp1 == NULL) {
 		printf("kaki");
 		return;
 	}
 	strcat(memin_line, "0");//remove and add formating to length of 8 letters***********************
+
+	char str[9];
+	sprintf(str, "%08d", 1);//added formating to 8 letters - need to assimilate
+
 	while (fgets(line, 100, fp1) != NULL)
 	{
 		char** splited_line = split(line, &size,',');
@@ -270,13 +277,15 @@ void create_memin(char* opcodes[22], char* registers[16], char* file_name)
 				strcpy(temp, _itoa(is_str_in_array(registers, splited_line[i], 16), temp, 10)); // copies the decimal value of register to temp
 				strcat(memin_line, temp);														// concatanate the register number to memin_line
 				printf("%s\n", memin_line);
+
+				write_file(out_file_name, memin_line);//added writing to file - check if can avoid opening file over and over
 			}
 		}
-		/*1.format the second line of the input to 8 letters
+		/*1.format the second line of the input to 8 letters v
 		2.initialize the arrays in the while
 		3.remove cat line 236
 		4.add func part to address labels and add their pc in the text
-		5.adapt to work with new code: read file and write file*/
+		5.adapt to work with new code: read file and write file v*/
 
 
 		// write memin_line to file.

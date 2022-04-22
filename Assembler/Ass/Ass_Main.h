@@ -13,5 +13,5 @@ label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int
 label* create_label();
 void destry_label(label* x);
 void find_labels(char* file_name, label** labels);
-void create_memin(char* opcodes[22], char* registers[16], char* file_name);
+void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, char* out_file_name);
 void free_array(label** labels);
