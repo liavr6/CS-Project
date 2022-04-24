@@ -3,6 +3,7 @@
 #include <string.h>
 #include "Ass_Main.h"
 #include <stdlib.h>
+#include <stdbool.h>
 
 label* create_label()
 {
@@ -99,8 +100,8 @@ int main(int argc, char *argv[])
 #pragma endregion
 		// Test to validate of file num from input command.
 
-	if (argc != 4) {
-		printf("Error: incorrect number of input files - 4 required\nExiting.");
+	if (argc != 3) {
+		printf("Error: incorrect number of input files - 3 required\nExiting.");
 		exit(1);
 	}
 	char rfname[] = { argv[1] };
@@ -248,42 +249,65 @@ int is_str_in_array(char* array[], char* str, int length) //return the opcode/re
 void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, char* out_file_name)
 {
 	int size;
-	char line[500], memin_line[10] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };//initialize again in the while******
-	char temp[10] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };//initialize again in the while******
+	char line[500] = { "0" };
+	char memin_line[10] = { NULL };//initialize again in the while******
+	char temp[10] = { NULL };//initialize again in the while******
+	char* imm;
 	FILE *fp1;
 	fp1 = fopen(in_file_name, "r");
 	if (fp1 == NULL) {
 		printf("kaki");
 		return;
 	}
-	strcat(memin_line, "0");//remove and add formating to length of 8 letters***********************
+	char str[6];
+	sprintf(str, "%05d", 0);
+	strcat(memin_line, str);
+	char** splited_line = split(line, &size, ',');
+	bool alpha = false;
+	//added formating to 8 letters - need to assimilate
 
-	char str[9];
-	sprintf(str, "%08d", 1);//added formating to 8 letters - need to assimilate
-
-	while (fgets(line, 100, fp1) != NULL)
+	while (fgets(line, 100, fp1) != NULL)//change 100??
 	{
-		char** splited_line = split(line, &size,',');
+		strcpy(temp, "00000");
+		splited_line = split(line, &size,',');
 		if (is_str_in_array(opcodes, splited_line[0], 22) != -1)
 		{
 			strcpy(temp, _itoa(is_str_in_array(opcodes, splited_line[0], 22), temp, 10)); // copies the decimal value of opcode to temp
 			strcat(memin_line, temp);													  // concatanate the register number to memin_line
 			printf("%s\n", memin_line);
 		}
-		for (int i = 1; i < size; i++)
+		for (int i = 1; i < (size-1); i++)
 		{
 			if (is_str_in_array(registers, splited_line[i], 16) != -1)
 			{
 				strcpy(temp, _itoa(is_str_in_array(registers, splited_line[i], 16), temp, 10)); // copies the decimal value of register to temp
 				strcat(memin_line, temp);														// concatanate the register number to memin_line
 				printf("%s\n", memin_line);
-
-				write_file(out_file_name, memin_line);//added writing to file - check if can avoid opening file over and over
 			}
 		}
+		write_file(out_file_name, memin_line);//added writing to file - check if can avoid opening file over and over
+		for (int ind = 0; ind < strlen(splited_line[size-1]); ind++)
+		{
+			if (isalpha(splited_line[size-1][ind]))//////add part to test if there is a minus sign
+			{
+				alpha = true;
+				break;
+			}
+		}
+		if (!alpha)
+		{
+			imm = tohex(atoi(splited_line[size]));;//check for mem leak!!!!
+			//sprintf(str, "%05d", atoi(splited_line[size]));
+			strcat(memin_line, imm);
+			write_file(out_file_name, memin_line);//added writing to file - check if can avoid opening file over and over
+		}
+		if (alpha)
+		{
+		}
+		alpha = false;
 		/*1.format the second line of the input to 8 letters v
-		2.initialize the arrays in the while
-		3.remove cat line 236
+		2.initialize the arrays in the while v
+		3.remove cat line 236 ?
 		4.add func part to address labels and add their pc in the text
 		5.adapt to work with new code: read file and write file v*/
 
@@ -293,6 +317,33 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 	}
 }
 
+
+char* substr(const char *src, int strt, int end)
+{
+	// get length destination string
+	int len = end - strt;
+	// allocate len + 1 chars for dst
+	char *dst = (char*)malloc(sizeof(char) * (len + 1));
+	strncpy(dst, (src + strt), len);
+	return dst;
+}
+//turns num to hex - assuming it isnt bigger than 5digit output
+char* tohex(int num)
+{
+	static char hexVal[9];
+	static char* shorthexVal;
+	if (num < 0) //deal if num is negative
+	{
+		sprintf(hexVal, "%08X", num);
+		shorthexVal = substr(hexVal, 3, 8);
+		return shorthexVal;
+	}
+	else//if positive
+	{
+		sprintf(hexVal, "%05X", num);
+		return hexVal;
+	}
+}
 void free_array(label** labels)
 {
 	size_t n = sizeof(labels) / sizeof(labels[0]);
