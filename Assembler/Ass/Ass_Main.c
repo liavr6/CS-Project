@@ -99,12 +99,16 @@ int main(int argc, char *argv[])
 	*/
 #pragma endregion
 		// Test to validate of file num from input command.
-
+	argc = 3;
+	argv[0] = "program.exe";
+	argv[1] = "..\\TestThis.asm";
+	argv[2]="memin.txt";
 	if (argc != 3) {
 		printf("Error: incorrect number of input files - 3 required\nExiting.");
 		exit(1);
 	}
-	char rfname[] = { argv[1] };
+	char rfname[]="";
+	strcpy(rfname, argv[1]);
 	label** labelsarray = (label**)malloc(sizeof(label*));
 	if (labelsarray == NULL){exit(1);}
 	labelsarray = malloc(0);
@@ -213,7 +217,7 @@ void find_labels(char* file_name, label** labels)
 	char line[500];
 	fp1 = fopen(file_name, "r");
 	if (fp1 == NULL) {
-		printf("kaki");
+		printf("kaki");//delete
 		return;
 	}
 	while (fgets(line, 100, fp1) != NULL)
@@ -222,13 +226,25 @@ void find_labels(char* file_name, label** labels)
 		char **temp_line = split(line, &a,',');
 		for (int i = 0; i < a; i++)
 		{
+			//counts the curr pc in regard with r/i format
+
+			if (temp_line[i] == "$imm")
+			{
+				line_counter += 2;
+				break;
+			}
+			if (strpbrk(temp_line[0], ":") == NULL && (i == (a - 1)))
+			{
+				line_counter += 1;
+			}
 			if (strpbrk(temp_line[i], ":") != NULL) // checks if the string has ":" in it.
 			{
 				remove_char(temp_line[i], ':');
 				strcpy(labels[labels_count]->name, temp_line[i]);
-				labels[labels_count]->pc = line_counter;
+				labels[labels_count]->pc = line_counter + 1;
 				labels_count++;
 			}
+
 		}
 	}
 }
@@ -265,14 +281,16 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 	char** splited_line = split(line, &size, ',');
 	bool alpha = false;
 	//added formating to 8 letters - need to assimilate
-
+	static char hexVal[3];
 	while (fgets(line, 100, fp1) != NULL)//change 100??
 	{
 		strcpy(temp, "00000");
 		splited_line = split(line, &size,',');
 		if (is_str_in_array(opcodes, splited_line[0], 22) != -1)
 		{
-			strcpy(temp, _itoa(is_str_in_array(opcodes, splited_line[0], 22), temp, 10)); // copies the decimal value of opcode to temp
+			sprintf(hexVal, "%02X", _itoa(is_str_in_array(opcodes, splited_line[0], 22), temp, 10));
+			strcpy(temp, hexVal); // copies the decimal value of opcode to temp
+			//strcpy(temp, _itoa(is_str_in_array(opcodes, splited_line[0], 22), temp, 10)); // copies the decimal value of opcode to temp
 			strcat(memin_line, temp);													  // concatanate the register number to memin_line
 			printf("%s\n", memin_line);
 		}
@@ -305,11 +323,11 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 		{
 		}
 		alpha = false;
-		/*1.format the second line of the input to 8 letters v
+		/* 1.format the second line of the input to 8 letters v
 		2.initialize the arrays in the while v
 		3.remove cat line 236 ?
 		4.add func part to address labels and add their pc in the text
-		5.adapt to work with new code: read file and write file v*/
+		5.adapt to work with new code: read file and write file v */
 
 
 		// write memin_line to file.
