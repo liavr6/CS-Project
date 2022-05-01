@@ -113,6 +113,8 @@ int main(int argc, char *argv[])
 	if (labelsarray == NULL){exit(1);}
 	labelsarray = malloc(0);
 	find_labels(rfname, labelsarray);
+
+
 	create_memin(opcodes[22], registers[16], rfname,argv[2]);
 	free_array(labelsarray);
 
@@ -228,7 +230,7 @@ void find_labels(char* file_name, label** labels)
 		{
 			//counts the curr pc in regard with r/i format
 
-			if (temp_line[i] == "$imm")
+			if (strcmp(temp_line[i], "$imm") == 0)
 			{
 				line_counter += 2;
 				break;

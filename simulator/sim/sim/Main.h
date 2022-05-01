@@ -59,4 +59,6 @@ typedef struct instruction
 }	INSTRUCTION;
 
 //function to read input files
-int read_file(FILE *fpointer, char chmod, char filename[]);
+FILE* read_file(char filename[], char chmod);
+void write_file(char *filename, char *strtowrite);
+char* substr(const char *src, int strt, int end);

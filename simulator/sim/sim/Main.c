@@ -1,7 +1,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include "Main.h"
-
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
 int main(int argc, char *argv[])
 {
 	// Test to validate of file num from input command.
@@ -61,12 +63,35 @@ int main(int argc, char *argv[])
 }	
 
 //function to read input files
-int read_file(FILE *fpointer,  char chmod, char filename[])
+FILE* read_file(char filename[], char chmod)
 {
+	static FILE *fpointer;
+	//fpointer = fopen(filename, "r");
+
 	fpointer = fopen(filename, chmod);
 	if (fpointer == NULL)
 	{
-		printf("Error: reading file %s was problematic.",filename);
-		return 1;
+		printf("Error: reading file %s was problematic.", filename);
+		return NULL;
 	}
+	return fpointer;
+}
+//function to write output files
+void write_file(char *filename, char *strtowrite)
+{
+	// open file for writing
+	FILE *fp = fopen(filename, "a+");
+	// write to text file
+	fprintf(fp, strtowrite);
+	// close file
+	fclose(fp);
+}
+char* substr(const char *src, int strt, int end)
+{
+	// get length destination string
+	int len = end - strt;
+	// allocate len + 1 chars for dst
+	char *dst = (char*)malloc(sizeof(char) * (len + 1));
+	strncpy(dst, (src + strt), len);
+	return dst;
 }
