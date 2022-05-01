@@ -4,3 +4,4 @@
 fib:
 	jal $ra, $imm, $zero, da
 da:
+	add $t2, $zero, $imm, 1

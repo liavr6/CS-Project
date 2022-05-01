@@ -107,16 +107,17 @@ int main(int argc, char *argv[])
 		printf("Error: incorrect number of input files - 3 required\nExiting.");
 		exit(1);
 	}
-	char rfname[]="";
-	strcpy(rfname, argv[1]);
-	label** labelsarray = (label**)malloc(sizeof(label*));
-	if (labelsarray == NULL){exit(1);}
-	labelsarray = malloc(0);
-	find_labels(rfname, labelsarray);
+	//char rfname[1024] = { 0 };
+	//strcpy(rfname, argv[1]);
+	// label** labelsarray = (label**)malloc(sizeof(label*));
+	label** labelsarray = (label**)malloc(0);
+	if (labelsarray == NULL) { exit(1); }
+	int labelnum = find_labels(argv[1], &labelsarray);
 
+	
+	create_memin(opcodes, registers, argv[1],argv[2], labelsarray, labelnum);
 
-	create_memin(opcodes[22], registers[16], rfname,argv[2]);
-	free_array(labelsarray);
+	free_array(labelsarray, labelnum);
 
 
 	/*1.read_file(asm) v
@@ -180,10 +181,9 @@ FILE* read_file(char filename[], char chmod)
 }
 
 //function to write output files
-void write_file(char *filename, char *strtowrite)
+void write_file(FILE *fp, char *strtowrite)
 {
 	// open file for writing
-	FILE *fp = fopen(filename, "a+");
 	//if (fp == NULL)
 	//{
 	//	fp = fopen(filename, "wb");
@@ -191,18 +191,17 @@ void write_file(char *filename, char *strtowrite)
 	//	//return 1;
 	//}
 	// write to text file
-	fprintf(fp, strtowrite);
+	fprintf(fp, "%s\n", strtowrite);
 
 	// close file
-	fclose(fp);
 }
 
 //adds a new label structs to the existing array of labels
 label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int pc) {
 	// create a new label struct
 	label* nlabel = (label*)malloc(sizeof(label));
-	nlabel->name = (char*)malloc(sizeof(labelname));
 	nlabel->pc = pc;
+	nlabel->name = (char*)malloc(strlen(labelname)+1);
 	strcpy(nlabel->name, labelname);
 	labelarray = (label**)realloc(labelarray, sizeof(label*)*(array_size+1));
 	labelarray[array_size] = nlabel;
@@ -210,14 +209,15 @@ label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int
 }
 
 //func to find labels in the text file
-void find_labels(char* file_name, label** labels)
+int find_labels(char* file_name, label*** labels)
 {
 	FILE *fp1;
 	int line_counter = 0;
 	int len = 0, a;
 	int labels_count = 0;
-	char line[500];
+	char line[1024];
 	fp1 = fopen(file_name, "r");
+
 	if (fp1 == NULL) {
 		printf("kaki");//delete
 		return;
@@ -242,16 +242,16 @@ void find_labels(char* file_name, label** labels)
 			if (strpbrk(temp_line[i], ":") != NULL) // checks if the string has ":" in it.
 			{
 				remove_char(temp_line[i], ':');
-				strcpy(labels[labels_count]->name, temp_line[i]);
-				labels[labels_count]->pc = line_counter + 1;
+				*labels = AddLabelToArray(*labels, labels_count, temp_line[i], line_counter + 1);
 				labels_count++;
 			}
 
 		}
 	}
+	return labels_count;
 }
 
-//func to find out if a lable exists in the label array
+//func to find out if a opcode exists in the opcode array
 int is_str_in_array(char* array[], char* str, int length) //return the opcode/register value of str if it's indeed an opcode/register, -1 otherwise.
 { // array is always the opcodes/registers array from main function.
 	for (int i = 0; i < length; i++)
@@ -263,13 +263,25 @@ int is_str_in_array(char* array[], char* str, int length) //return the opcode/re
 	return -1;
 }
 
+//func to find out if a lable exists in the label array
+int is_lbl_in_array(label** labels, char* str, int length) //return the index value of str if it's indeed an label, -1 otherwise.
+{
+	for (int i = 0; i < length; i++)
+	{
+		if (strcmp(labels[i]->name, str) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 //func to create data for the final output file and writes it to the file
-void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, char* out_file_name)
+void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, char* out_file_name, label** labels,int labelnum)
 {
 	int size;
 	char line[500] = { "0" };
-	char memin_line[10] = { NULL };//initialize again in the while******
-	char temp[10] = { NULL };//initialize again in the while******
+	char memin_line[1000] = { NULL };//initialize again in the while******
+	char temp[1000] = { NULL };//initialize again in the while******
 	char* imm;
 	FILE *fp1;
 	fp1 = fopen(in_file_name, "r");
@@ -277,11 +289,20 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 		printf("kaki");
 		return;
 	}
-	char str[6];
-	sprintf(str, "%05d", 0);
+
+	FILE *fp2 = fopen(out_file_name, "w");
+	if (fp2 == NULL) {
+		fclose(fp1);
+		printf("kaki2");
+		return;
+	}
+
+	char str[6] = "00000";
+	// sprintf(str, "%05d", 0);
 	strcat(memin_line, str);
 	char** splited_line = split(line, &size, ',');
 	bool alpha = false;
+	int labelindex = 0;
 	//added formating to 8 letters - need to assimilate
 	static char hexVal[3];
 	while (fgets(line, 100, fp1) != NULL)//change 100??
@@ -305,7 +326,7 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 				printf("%s\n", memin_line);
 			}
 		}
-		write_file(out_file_name, memin_line);//added writing to file - check if can avoid opening file over and over
+		write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
 		for (int ind = 0; ind < strlen(splited_line[size-1]); ind++)
 		{
 			if (isalpha(splited_line[size-1][ind]))//////add part to test if there is a minus sign
@@ -316,13 +337,27 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 		}
 		if (!alpha)
 		{
-			imm = tohex(atoi(splited_line[size]));;//check for mem leak!!!!
+			imm = tohex(atoi(splited_line[size-1]));;//check for mem leak!!!!
 			//sprintf(str, "%05d", atoi(splited_line[size]));
 			strcat(memin_line, imm);
-			write_file(out_file_name, memin_line);//added writing to file - check if can avoid opening file over and over
+			write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
 		}
 		if (alpha)
 		{
+			if (labels[0] != NULL)
+			{
+				labelindex = is_lbl_in_array(labels, splited_line[size - 1], labelnum);
+				if (labelindex != -1)
+				{
+					imm = tohex(labelindex);//check for mem leak!!!!
+					strcat(memin_line, imm);
+					write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+				}
+				else
+					return -1;
+			}
+			else
+				return -1;
 		}
 		alpha = false;
 		/* 1.format the second line of the input to 8 letters v
@@ -335,6 +370,9 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 		// write memin_line to file.
 		// initialize memin_line,temp at the end of a while iteration.
 	}
+
+	fclose(fp2);
+	fclose(fp1);
 }
 
 
@@ -364,10 +402,9 @@ char* tohex(int num)
 		return hexVal;
 	}
 }
-void free_array(label** labels)
+void free_array(label** labels, int labelnum)
 {
-	size_t n = sizeof(labels) / sizeof(labels[0]);
-	for (int i = 0; i < n; i++) {
+	for (int i = 0; i < labelnum; i++) {
 		free(labels[i]->name);
 		free(labels[i]);
 	}

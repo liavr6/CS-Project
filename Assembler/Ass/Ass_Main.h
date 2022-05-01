@@ -12,8 +12,9 @@ char *registers[16] = { "$zero", "$imm", "$v0", "$a0", "$a1", "$a2", "$a3", "$t0
 label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int pc);
 label* create_label();
 void destry_label(label* x);
-void find_labels(char* file_name, label** labels);
-void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, char* out_file_name);
-void free_array(label** labels);
+int find_labels(char* file_name, label*** labels);
+void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, char* out_file_name, label** labels);
+void free_array(label** labels,int labelnum);
 char* substr(const char *src, int strt, int end);
 char* tohex(int num);
+int is_lbl_in_array(label** labels, char* str, int length);
