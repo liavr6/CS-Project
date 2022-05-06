@@ -1,7 +1,7 @@
 #pragma once
 char** split(char* mainstring, int* size_top_arr, char del);
 void remove_char(char *str, char target);
-void write_file(char *filename, char *strtowrite);
+void write_file(FILE *fp, char *strtowrite);
 FILE* read_file(char filename[], char chmod);
 typedef struct s_label {
 	char* name;
@@ -13,8 +13,8 @@ label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int
 label* create_label();
 void destry_label(label* x);
 int find_labels(char* file_name, label*** labels);
-void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, char* out_file_name, label** labels);
-void free_array(label** labels,int labelnum);
+void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, char* out_file_name, label** labels, int labelnum);
+void free_array(label** labels, int labelnum);
 char* substr(const char *src, int strt, int end);
 char* tohex(int num);
 int is_lbl_in_array(label** labels, char* str, int length);

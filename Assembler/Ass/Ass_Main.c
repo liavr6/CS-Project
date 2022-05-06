@@ -224,7 +224,7 @@ int find_labels(char* file_name, label*** labels)
 	}
 	while (fgets(line, 100, fp1) != NULL)
 	{
-		line_counter++;
+		//line_counter++;
 		char **temp_line = split(line, &a,',');
 		for (int i = 0; i < a; i++)
 		{
@@ -242,7 +242,8 @@ int find_labels(char* file_name, label*** labels)
 			if (strpbrk(temp_line[i], ":") != NULL) // checks if the string has ":" in it.
 			{
 				remove_char(temp_line[i], ':');
-				*labels = AddLabelToArray(*labels, labels_count, temp_line[i], line_counter + 1);
+				remove_char(temp_line[i], '\n');
+				*labels = AddLabelToArray(*labels, labels_count, temp_line[i], line_counter);
 				labels_count++;
 			}
 
@@ -305,70 +306,106 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 	int labelindex = 0;
 	//added formating to 8 letters - need to assimilate
 	static char hexVal[3];
+	int resultop=0;
+	int resultreg = 0;
+	char resultopstr[1000] = "";
+	bool terf = false;
+
 	while (fgets(line, 100, fp1) != NULL)//change 100??
 	{
 		strcpy(temp, "00000");
-		splited_line = split(line, &size,',');
-		if (is_str_in_array(opcodes, splited_line[0], 22) != -1)
+		splited_line = split(line, &size, ',');
+
+			terf = strstr(line, ".word");
+		
+
+		if (size>1 && !terf)
 		{
-			sprintf(hexVal, "%02X", _itoa(is_str_in_array(opcodes, splited_line[0], 22), temp, 10));
-			strcpy(temp, hexVal); // copies the decimal value of opcode to temp
-			//strcpy(temp, _itoa(is_str_in_array(opcodes, splited_line[0], 22), temp, 10)); // copies the decimal value of opcode to temp
-			strcat(memin_line, temp);													  // concatanate the register number to memin_line
-			printf("%s\n", memin_line);
-		}
-		for (int i = 1; i < (size-1); i++)
-		{
-			if (is_str_in_array(registers, splited_line[i], 16) != -1)
+			resultop = is_str_in_array(opcodes, splited_line[0], 22);
+			if (resultop != -1)
 			{
-				strcpy(temp, _itoa(is_str_in_array(registers, splited_line[i], 16), temp, 10)); // copies the decimal value of register to temp
-				strcat(memin_line, temp);														// concatanate the register number to memin_line
+				sprintf(resultopstr, "%d", resultop);
+				// resultopstr = _itoa(resultop, temp, 10);
+				sprintf(hexVal, "%02X", resultop);
+				strcpy(temp, hexVal); // copies the decimal value of opcode to temp
+				//strcpy(temp, _itoa(is_str_in_array(opcodes, splited_line[0], 22), temp, 10)); // copies the decimal value of opcode to temp
+				strcpy(memin_line, temp);													  // concatanate the register number to memin_line
 				printf("%s\n", memin_line);
 			}
-		}
-		write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
-		for (int ind = 0; ind < strlen(splited_line[size-1]); ind++)
-		{
-			if (isalpha(splited_line[size-1][ind]))//////add part to test if there is a minus sign
+			for (int i = 1; i < (size - 1); i++)
 			{
-				alpha = true;
-				break;
-			}
-		}
-		if (!alpha)
-		{
-			imm = tohex(atoi(splited_line[size-1]));;//check for mem leak!!!!
-			//sprintf(str, "%05d", atoi(splited_line[size]));
-			strcat(memin_line, imm);
-			write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
-		}
-		if (alpha)
-		{
-			if (labels[0] != NULL)
-			{
-				labelindex = is_lbl_in_array(labels, splited_line[size - 1], labelnum);
-				if (labelindex != -1)
+				if (is_str_in_array(registers, splited_line[i], 16) != -1)
 				{
-					imm = tohex(labelindex);//check for mem leak!!!!
-					strcat(memin_line, imm);
-					write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+					resultreg = is_str_in_array(registers, splited_line[i], 16);
+					strcpy(temp, _itoa(resultreg, temp, 10)); // copies the decimal value of register to temp
+					sprintf(hexVal, "%01X", resultreg);
+					strcpy(temp, hexVal);
+					strcat(memin_line, temp);														// concatanate the register number to memin_line
+					printf("%s\n", memin_line);
+				}
+			}
+			write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+			for (int ind = 0; ind < strlen(splited_line[size - 1]); ind++)
+			{
+				if (isalpha(splited_line[size - 1][ind]))//////add part to test if there is a minus sign
+				{
+					alpha = true;
+					break;
+				}
+			}
+			if (!alpha)
+			{
+				imm = tohex(atoi(splited_line[size - 1]));;//check for mem leak!!!!
+				//sprintf(str, "%05d", atoi(splited_line[size]));
+				for (int i = 0; i < size; i++)
+				{
+					if (strcmp(splited_line[i], "$imm") == 0)
+					{
+						strcpy(memin_line, "");
+						strcpy(memin_line, imm);
+						write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+						break;
+					}
+				}
+			}
+			if (alpha)
+			{
+				if (labels[0] != NULL)
+				{
+					labelindex = is_lbl_in_array(labels, splited_line[size - 1], labelnum);
+					if (labelindex != -1)
+					{
+						//	immflag = split(line, &z, ',');
+						for (int i = 0; i < size; i++)
+						{
+							if (strcmp(splited_line[i], "$imm") == 0)
+							{
+								strcpy(memin_line, "");
+								break;
+							}
+						}
+						imm = tohex(labels[labelindex]->pc);//check for mem leak!!!!
+						strcat(memin_line, imm);
+						write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+
+					}
+					else
+						return -1;
 				}
 				else
 					return -1;
 			}
-			else
-				return -1;
+			alpha = false;
+			/* 1.format the second line of the input to 8 letters v
+			2.initialize the arrays in the while v
+			3.remove cat line 236 ?
+			4.add func part to address labels and add their pc in the text
+			5.adapt to work with new code: read file and write file v */
+
+
+			// write memin_line to file.
+			// initialize memin_line,temp at the end of a while iteration.
 		}
-		alpha = false;
-		/* 1.format the second line of the input to 8 letters v
-		2.initialize the arrays in the while v
-		3.remove cat line 236 ?
-		4.add func part to address labels and add their pc in the text
-		5.adapt to work with new code: read file and write file v */
-
-
-		// write memin_line to file.
-		// initialize memin_line,temp at the end of a while iteration.
 	}
 
 	fclose(fp2);
@@ -383,17 +420,20 @@ char* substr(const char *src, int strt, int end)
 	// allocate len + 1 chars for dst
 	char *dst = (char*)malloc(sizeof(char) * (len + 1));
 	strncpy(dst, (src + strt), len);
+	dst += '\0';
 	return dst;
 }
 //turns num to hex - assuming it isnt bigger than 5digit output
 char* tohex(int num)
 {
 	static char hexVal[9];
-	static char* shorthexVal;
-	if (num < 0) //deal if num is negative
+	static char shorthexVal[6];
+	if (num < 0) //deal if num is negatived
 	{
 		sprintf(hexVal, "%08X", num);
-		shorthexVal = substr(hexVal, 3, 8);
+		//shorthexVal = substr(hexVal, 3, 8);
+		strncpy(shorthexVal, hexVal + 3, 8);
+		//shorthexVal += '\0';
 		return shorthexVal;
 	}
 	else//if positive
