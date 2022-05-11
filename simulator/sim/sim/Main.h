@@ -62,3 +62,4 @@ typedef struct instruction
 FILE* read_file(char filename[], char chmod);
 void write_file(char *filename, char *strtowrite);
 char* substr(const char *src, int strt, int end);
+void updatepc(char type, char* cmd, int* cycles);

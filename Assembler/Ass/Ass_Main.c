@@ -208,6 +208,18 @@ label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int
 	return labelarray;
 }
 
+//adds a new word structs to the existing array of words
+word** AddWordToArray(word** wordarr, int array_size, int place, int val) {
+	// create a new word struct
+	word* nword = (label*)malloc(sizeof(word));
+	nword->place = place;
+	nword->val = val;
+	//nword->name = (char*)malloc(strlen(labelname) + 1);
+	//strcpy(nlabel->name, labelname);
+	wordarr = (word**)realloc(wordarr, sizeof(label*)*(array_size + 1));
+	wordarr[array_size] = nword;
+	return wordarr;
+}
 //func to find labels in the text file
 int find_labels(char* file_name, label*** labels)
 {
@@ -284,6 +296,7 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 	char memin_line[1000] = { NULL };//initialize again in the while******
 	char temp[1000] = { NULL };//initialize again in the while******
 	char* imm;
+	int writtenlines = 0;
 	FILE *fp1;
 	fp1 = fopen(in_file_name, "r");
 	if (fp1 == NULL) {
@@ -297,7 +310,7 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 		printf("kaki2");
 		return;
 	}
-
+	int word = 0;
 	char str[6] = "00000";
 	// sprintf(str, "%05d", 0);
 	strcat(memin_line, str);
@@ -306,22 +319,46 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 	int labelindex = 0;
 	//added formating to 8 letters - need to assimilate
 	static char hexVal[3];
+	static char nhexVal[5];
+
 	int resultop=0;
 	int resultreg = 0;
 	char resultopstr[1000] = "";
 	bool terf = false;
+	label** wordsa = (label**)malloc(0);
+	if (wordsa == NULL) { exit(1); }
 
 	while (fgets(line, 100, fp1) != NULL)//change 100??
 	{
 		strcpy(temp, "00000");
 		splited_line = split(line, &size, ',');
 
-			terf = strstr(line, ".word");
-		
+			terf = strstr(line, ".word");//consider removing this part*******************************!!!!
+			if (terf)
+			{
+				/*int ind = atoi(splited_line[1]);
+				if (writtenlines < (ind))
+				{
+					while (writtenlines < (ind))
+					{
+						write_file(fp2, "00000");
+						writtenlines++;
+					}
+					sprintf(nhexVal, "%05X", atoi(splited_line[2]));
+					strcpy(memin_line, nhexVal);*/
+				AddWordToArray(wordsa, word, atoi(splited_line[1]), atoi(splited_line[2]));
+					word++;
+					terf = false;
+				
+		}
 
-		if (size>1 && !terf)
+		if (size>1)
 		{
 			resultop = is_str_in_array(opcodes, splited_line[0], 22);
+			if (resultop == 18)
+			{
+				bool a = true;
+			}
 			if (resultop != -1)
 			{
 				sprintf(resultopstr, "%d", resultop);
@@ -344,7 +381,12 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 					printf("%s\n", memin_line);
 				}
 			}
-			write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+
+			if (!strstr(line, ".word"))
+			{
+				write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+			}
+			writtenlines++;
 			for (int ind = 0; ind < strlen(splited_line[size - 1]); ind++)
 			{
 				if (isalpha(splited_line[size - 1][ind]))//////add part to test if there is a minus sign
@@ -363,7 +405,12 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 					{
 						strcpy(memin_line, "");
 						strcpy(memin_line, imm);
-						write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+
+						if (!strstr(line, ".word"))
+						{
+							write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+						}
+						writtenlines++;
 						break;
 					}
 				}
@@ -386,8 +433,13 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 						}
 						imm = tohex(labels[labelindex]->pc);//check for mem leak!!!!
 						strcat(memin_line, imm);
-						write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
 
+
+						if (!strstr(line, ".word"))
+						{
+							write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+						}
+						writtenlines++;
 					}
 					else
 						return -1;
@@ -410,6 +462,8 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 
 	fclose(fp2);
 	fclose(fp1);
+	wordhandle(out_file_name, wordsa);
+
 }
 
 
@@ -440,6 +494,84 @@ char* tohex(int num)
 	{
 		sprintf(hexVal, "%05X", num);
 		return hexVal;
+	}
+}
+int wordhandle(char* file_name, word** words)
+{
+	/* File pointer to hold reference of input file */
+	FILE * fp;
+	FILE * ft;
+	char buffer[1000];
+	char newline[1000];
+	int line, count;
+	int wordn = 0;
+	/*printf("Enter line number to replace: ");
+	scanf("%d", &line);
+	printf("Replace '%d' line with: ", line);
+	fgets(newline, 1000, stdin);*/
+	char hexv[6];
+	/*  Open required files */
+	fp = fopen(file_name, "a");
+	ft = fopen("replace.txt", "w");
+	count = 0;
+	size_t n = sizeof(words) / sizeof(words[0]);
+
+	char chr;
+	FILE *fileptr = fopen(file_name, "r");
+	//extract character from file and store in chr
+	chr = getc(fileptr);
+	while (chr != EOF)
+	{
+		//Count whenever new line is encountered
+		if (chr == '\n')
+		{
+			count++;
+		}
+		//take next character from file.
+		chr = getc(fileptr);
+	}
+	fclose(fileptr); //close file.
+
+		while (wordn<n)
+		{
+			while (count < (words[wordn]->place)+1)
+			{
+				fprintf(fp, "%s", "00000\n");
+				//write_file(fp, "00000");
+				count++;
+			}
+			fclose(fp);
+			fp = fopen(file_name, "r");
+			if (fp != NULL || ft != NULL)
+			{
+			sprintf(hexv, "%05X", words[wordn]->val);
+			line = words[wordn]->place;
+			strcpy(newline, hexv);
+			strcat(newline, "\n");
+
+			count = 0;
+			while ((fgets(buffer, 1000, fp)) != NULL)
+			{
+			if (count == line)
+			{
+				count++;
+				fputs(newline, ft);
+			}
+			else
+			{
+				count++;
+				fputs(buffer, ft);
+			}
+			}
+
+			free(words[wordn]);
+			wordn++;
+		}
+		fclose(fp);
+		fclose(ft);
+		remove(file_name);
+		rename("replace.txt", file_name);
+		return 0;
 	}
 }
 void free_array(label** labels, int labelnum)

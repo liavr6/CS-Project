@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 	int registers[REGS] = { 0 };
 	int ioregisters[IOREGS] = { 0 };
 	int pc = 0; int irqstat = 0;
-
+	int* cycles = 0;
 	#pragma region fpRegion
 		//file pointers definition
 		FILE *file_imemin = NULL, *file_dmemin = NULL, *file_diskin = NULL, *file_irq2in = NULL, *file_dmemout = NULL, *file_regout = NULL, 
@@ -58,6 +58,8 @@ int main(int argc, char *argv[])
 		{
 			//updating interuption station
 			irqstat = ((ioregisters[0] & ioregisters[3]) | (ioregisters[1] & ioregisters[4]) | (ioregisters[2] & ioregisters[5]));
+			
+			updatepc("R", "sw", cycles);//update cycles count
 			ioregisters[8]++;//update current num of clock cycles
 		} while (pc != -1);
 }	
@@ -94,4 +96,20 @@ char* substr(const char *src, int strt, int end)
 	char *dst = (char*)malloc(sizeof(char) * (len + 1));
 	strncpy(dst, (src + strt), len);
 	return dst;
+}
+
+void updatepc(char type, char* cmd, int* cycles)
+{
+	if (type == "R")
+	{
+		*cycles += 1;
+	}
+	if (type == "I")
+	{
+		*cycles += 2;
+	}
+	if (cmd == "lw" || cmd == "sw")
+	{
+		*cycles += 1;
+	}
 }
