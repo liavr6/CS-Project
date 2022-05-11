@@ -211,7 +211,7 @@ label** AddLabelToArray(label** labelarray, int array_size, char* labelname, int
 //adds a new word structs to the existing array of words
 word** AddWordToArray(word** wordarr, int array_size, int place, int val) {
 	// create a new word struct
-	word* nword = (label*)malloc(sizeof(word));
+	word* nword = (word*)malloc(sizeof(word));
 	nword->place = place;
 	nword->val = val;
 	//nword->name = (char*)malloc(strlen(labelname) + 1);
@@ -327,11 +327,12 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 	bool terf = false;
 	label** wordsa = (label**)malloc(0);
 	if (wordsa == NULL) { exit(1); }
-
+	//word *nword;
 	while (fgets(line, 100, fp1) != NULL)//change 100??
 	{
 		strcpy(temp, "00000");
 		splited_line = split(line, &size, ',');
+		terf = false;
 
 			terf = strstr(line, ".word");//consider removing this part*******************************!!!!
 			if (terf)
@@ -346,123 +347,129 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 					}
 					sprintf(nhexVal, "%05X", atoi(splited_line[2]));
 					strcpy(memin_line, nhexVal);*/
-				AddWordToArray(wordsa, word, atoi(splited_line[1]), atoi(splited_line[2]));
+				//AddWordToArray(wordsa, word, atoi(splited_line[1]), atoi(splited_line[2]));
+			 //nword = (word*)malloc(sizeof(word));
+				//nword->place = atoi(splited_line[1]);
+				//nword->val = atoi(splited_line[2]);
+
+				fflush(fp2);
+				wordhandle(out_file_name, atoi(splited_line[1]), atoi(splited_line[2]));
 					word++;
-					terf = false;
 				
-		}
-
-		if (size>1)
-		{
-			resultop = is_str_in_array(opcodes, splited_line[0], 22);
-			if (resultop == 18)
-			{
-				bool a = true;
 			}
-			if (resultop != -1)
+			if (!terf)
 			{
-				sprintf(resultopstr, "%d", resultop);
-				// resultopstr = _itoa(resultop, temp, 10);
-				sprintf(hexVal, "%02X", resultop);
-				strcpy(temp, hexVal); // copies the decimal value of opcode to temp
-				//strcpy(temp, _itoa(is_str_in_array(opcodes, splited_line[0], 22), temp, 10)); // copies the decimal value of opcode to temp
-				strcpy(memin_line, temp);													  // concatanate the register number to memin_line
-				printf("%s\n", memin_line);
-			}
-			for (int i = 1; i < (size - 1); i++)
-			{
-				if (is_str_in_array(registers, splited_line[i], 16) != -1)
+				if (size > 1)
 				{
-					resultreg = is_str_in_array(registers, splited_line[i], 16);
-					strcpy(temp, _itoa(resultreg, temp, 10)); // copies the decimal value of register to temp
-					sprintf(hexVal, "%01X", resultreg);
-					strcpy(temp, hexVal);
-					strcat(memin_line, temp);														// concatanate the register number to memin_line
-					printf("%s\n", memin_line);
-				}
-			}
-
-			if (!strstr(line, ".word"))
-			{
-				write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
-			}
-			writtenlines++;
-			for (int ind = 0; ind < strlen(splited_line[size - 1]); ind++)
-			{
-				if (isalpha(splited_line[size - 1][ind]))//////add part to test if there is a minus sign
-				{
-					alpha = true;
-					break;
-				}
-			}
-			if (!alpha)
-			{
-				imm = tohex(atoi(splited_line[size - 1]));;//check for mem leak!!!!
-				//sprintf(str, "%05d", atoi(splited_line[size]));
-				for (int i = 0; i < size; i++)
-				{
-					if (strcmp(splited_line[i], "$imm") == 0)
+					resultop = is_str_in_array(opcodes, splited_line[0], 22);
+					if (resultop == 18)
 					{
-						strcpy(memin_line, "");
-						strcpy(memin_line, imm);
-
-						if (!strstr(line, ".word"))
-						{
-							write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
-						}
-						writtenlines++;
-						break;
+						bool a = true;
 					}
-				}
-			}
-			if (alpha)
-			{
-				if (labels[0] != NULL)
-				{
-					labelindex = is_lbl_in_array(labels, splited_line[size - 1], labelnum);
-					if (labelindex != -1)
+					if (resultop != -1)
 					{
-						//	immflag = split(line, &z, ',');
+						sprintf(resultopstr, "%d", resultop);
+						// resultopstr = _itoa(resultop, temp, 10);
+						sprintf(hexVal, "%02X", resultop);
+						strcpy(temp, hexVal); // copies the decimal value of opcode to temp
+						//strcpy(temp, _itoa(is_str_in_array(opcodes, splited_line[0], 22), temp, 10)); // copies the decimal value of opcode to temp
+						strcpy(memin_line, temp);													  // concatanate the register number to memin_line
+						printf("%s\n", memin_line);
+					}
+					for (int i = 1; i < (size - 1); i++)
+					{
+						if (is_str_in_array(registers, splited_line[i], 16) != -1)
+						{
+							resultreg = is_str_in_array(registers, splited_line[i], 16);
+							strcpy(temp, _itoa(resultreg, temp, 10)); // copies the decimal value of register to temp
+							sprintf(hexVal, "%01X", resultreg);
+							strcpy(temp, hexVal);
+							strcat(memin_line, temp);														// concatanate the register number to memin_line
+							printf("%s\n", memin_line);
+						}
+					}
+
+					if (!strstr(line, ".word"))
+					{
+						write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+					}
+					writtenlines++;
+					for (int ind = 0; ind < strlen(splited_line[size - 1]); ind++)
+					{
+						if (isalpha(splited_line[size - 1][ind]))//////add part to test if there is a minus sign
+						{
+							alpha = true;
+							break;
+						}
+					}
+					if (!alpha)
+					{
+						imm = tohex(atoi(splited_line[size - 1]));;//check for mem leak!!!!
+						//sprintf(str, "%05d", atoi(splited_line[size]));
 						for (int i = 0; i < size; i++)
 						{
 							if (strcmp(splited_line[i], "$imm") == 0)
 							{
 								strcpy(memin_line, "");
+								strcpy(memin_line, imm);
+
+								if (!strstr(line, ".word"))
+								{
+									write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+								}
+								writtenlines++;
 								break;
 							}
 						}
-						imm = tohex(labels[labelindex]->pc);//check for mem leak!!!!
-						strcat(memin_line, imm);
-
-
-						if (!strstr(line, ".word"))
-						{
-							write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
-						}
-						writtenlines++;
 					}
-					else
-						return -1;
+					if (alpha)
+					{
+						if (labels[0] != NULL)
+						{
+							labelindex = is_lbl_in_array(labels, splited_line[size - 1], labelnum);
+							if (labelindex != -1)
+							{
+								//	immflag = split(line, &z, ',');
+								for (int i = 0; i < size; i++)
+								{
+									if (strcmp(splited_line[i], "$imm") == 0)
+									{
+										strcpy(memin_line, "");
+										break;
+									}
+								}
+								imm = tohex(labels[labelindex]->pc);//check for mem leak!!!!
+								strcat(memin_line, imm);
+
+
+								if (!strstr(line, ".word"))
+								{
+									write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
+								}
+								writtenlines++;
+							}
+							else
+								return -1;
+						}
+						else
+							return -1;
+					}
+					alpha = false;
+					/* 1.format the second line of the input to 8 letters v
+					2.initialize the arrays in the while v
+					3.remove cat line 236 ?
+					4.add func part to address labels and add their pc in the text
+					5.adapt to work with new code: read file and write file v */
+
+
+					// write memin_line to file.
+					// initialize memin_line,temp at the end of a while iteration.
 				}
-				else
-					return -1;
 			}
-			alpha = false;
-			/* 1.format the second line of the input to 8 letters v
-			2.initialize the arrays in the while v
-			3.remove cat line 236 ?
-			4.add func part to address labels and add their pc in the text
-			5.adapt to work with new code: read file and write file v */
-
-
-			// write memin_line to file.
-			// initialize memin_line,temp at the end of a while iteration.
-		}
 	}
 
 	fclose(fp2);
 	fclose(fp1);
-	wordhandle(out_file_name, wordsa);
 
 }
 
@@ -496,84 +503,112 @@ char* tohex(int num)
 		return hexVal;
 	}
 }
-int wordhandle(char* file_name, word** words)
+int wordhandle(char* file_name, int place, int val)
 {
-	/* File pointer to hold reference of input file */
-	FILE * fp;
-	FILE * ft;
-	char buffer[1000];
-	char newline[1000];
-	int line, count;
-	int wordn = 0;
-	/*printf("Enter line number to replace: ");
-	scanf("%d", &line);
-	printf("Replace '%d' line with: ", line);
-	fgets(newline, 1000, stdin);*/
-	char hexv[6];
-	/*  Open required files */
-	fp = fopen(file_name, "a");
-	ft = fopen("replace.txt", "w");
-	count = 0;
-	size_t n = sizeof(words) / sizeof(words[0]);
+	FILE *file = fopen(file_name, "r+");
 
-	char chr;
-	FILE *fileptr = fopen(file_name, "r");
-	//extract character from file and store in chr
-	chr = getc(fileptr);
-	while (chr != EOF)
+	fseek(file, 0, SEEK_END);
+	int file_size = ftell(file);
+	int number_of_lines = file_size / 7;
+
+	while (number_of_lines < place)
 	{
-		//Count whenever new line is encountered
-		if (chr == '\n')
-		{
-			count++;
-		}
-		//take next character from file.
-		chr = getc(fileptr);
+		fseek(file, 0, SEEK_END);
+		fprintf(file, "%05X\n", 0);
+		number_of_lines += 1;
 	}
-	fclose(fileptr); //close file.
 
-		while (wordn<n)
-		{
-			while (count < (words[wordn]->place)+1)
-			{
-				fprintf(fp, "%s", "00000\n");
-				//write_file(fp, "00000");
-				count++;
-			}
-			fclose(fp);
-			fp = fopen(file_name, "r");
-			if (fp != NULL || ft != NULL)
-			{
-			sprintf(hexv, "%05X", words[wordn]->val);
-			line = words[wordn]->place;
-			strcpy(newline, hexv);
-			strcat(newline, "\n");
-
-			count = 0;
-			while ((fgets(buffer, 1000, fp)) != NULL)
-			{
-			if (count == line)
-			{
-				count++;
-				fputs(newline, ft);
-			}
-			else
-			{
-				count++;
-				fputs(buffer, ft);
-			}
-			}
-
-			free(words[wordn]);
-			wordn++;
-		}
-		fclose(fp);
-		fclose(ft);
-		remove(file_name);
-		rename("replace.txt", file_name);
-		return 0;
+	if (place <= number_of_lines)
+	{
+		fseek(file, place * 7, SEEK_SET);
+		fprintf(file,"%05X\n", val);
 	}
+
+	fclose(file);
+	return val;
 }
+//
+//	/* File pointer to hold reference of input file */
+//	FILE * fp;
+//	FILE * ft;
+//	
+//	char buffer[1000];
+//	char newline[1000];
+//	int line, count;
+//	int wordn = 0;
+//	/*printf("Enter line number to replace: ");
+//	scanf("%d", &line);
+//	printf("Replace '%d' line with: ", line);
+//	fgets(newline, 1000, stdin);*/
+//	char hexv[6];
+//	/*  Open required files */
+//	fp = fopen(file_name, "a");
+//	ft = fopen("replace.txt", "w");
+//	count = 0;
+//	//size_t n = sizeof(words) / sizeof(words[0]);
+//	//n = 2;
+//	char chr;
+//	FILE *fileptr = fopen(file_name, "r");
+//	//extract character from file and store in chr
+//	chr = getc(fileptr);
+//	while (chr != EOF)
+//	{
+//		//Count whenever new line is encountered
+//		if (chr == '\n')
+//		{
+//			count++;
+//		}
+//		//take next character from file.
+//		chr = getc(fileptr);
+//	}
+//	fclose(fileptr); //close file
+//
+//		/*while (wordn<n)
+//		{*/
+//			while (count < (place)+1)
+//			{
+//				fprintf(fp, "%s", "00000\n");
+//				//write_file(fp, "00000");
+//				count++;
+//			}
+//			fclose(fp);
+//			fp = fopen(file_name, "r");
+//
+//			if (fp != NULL || ft != NULL)
+//			{
+//			sprintf(hexv, "%05X",val);
+//			line = place;
+//			strcpy(newline, hexv);
+//			strcat(newline, "\n");
+//
+//			count = 0;
+//			while ((fgets(buffer, 1000, fp)) != NULL)
+//			{
+//				if (count == line)
+//				{
+//					count++;
+//					//write_file(ft, newline); 
+//					fprintf(ft, "%s\n", newline);
+//					fclose(ft);
+//				}
+//				else
+//				{
+//					count++;
+//					//write_file(ft, buffer);
+//					fprintf(ft, "%s\n", buffer);
+//				}
+//			}
+//
+//			wordn++;
+//		//}
+//			fclose(fp);
+//			fclose(ft);
+//			remove(file_name);
+//			rename("replace.txt", file_name);
+//		return 0;
+//	}			
+//
+//}
 void free_array(label** labels, int labelnum)
 {
 	for (int i = 0; i < labelnum; i++) {

@@ -11,7 +11,7 @@ typedef struct s_word {
 	int place;
 	int val;
 } word;
-int wordhandle(char* file_name, word** words);
+int wordhandle(char* file_name, int place,int val);
 word** AddWordToArray(word** wordarr, int array_size, int place, int val);
 char *opcodes[22] = { "add", "sub", "mul", "and", "or", "xor", "sll", "sra", "srl", "beq", "bne", "blt", "bgt", "ble", "bge", "jal", "lw", "sw", "reti", "in", "out", "halt" };
 char *registers[16] = { "$zero", "$imm", "$v0", "$a0", "$a1", "$a2", "$a3", "$t0", "$t1", "$t2", "$s0", "$s1", "$s2", "$gp", "$sp", "$ra" };
