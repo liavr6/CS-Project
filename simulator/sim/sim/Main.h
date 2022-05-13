@@ -51,6 +51,10 @@
 #define MAX_LINES 4096
 #define SECTOR_SIZE	128		
 
+unsigned int oldsegval = 0;
+unsigned int oldledstate = 0;
+
+int ioregisters[IOREGS] = { 0 };
 
 // define structs for main
 typedef struct instruction
@@ -63,3 +67,9 @@ FILE* read_file(char filename[], char chmod);
 void write_file(char *filename, char *strtowrite);
 char* substr(const char *src, int strt, int end);
 void updatepc(char type, char* cmd, int* cycles);
+void LedLog(unsigned long long cycle, char *filename);
+void sevensegmenttoLog(unsigned long long cycle, char *filename);
+void MonitorManager();
+void irqhandler(int pc, int *cycles);
+void shutdownmethods(char* argv[], unsigned long long cycles);
+void CyclesLog(unsigned long long cycle, char *filename);
