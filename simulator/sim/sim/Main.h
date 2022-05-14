@@ -37,6 +37,10 @@
 #define MONITORC 'w'
 #define MONITOR_YUVC 'wb'
 
+#define IRQ0STS 3
+#define TIMERENB 11
+#define TIMERCURR 12
+#define TIMERMAX 13
 
 //default parameter from class report requirments
 #define IOREGS 23
@@ -73,3 +77,4 @@ void MonitorManager();
 void irqhandler(int pc, int *cycles);
 void shutdownmethods(char* argv[], unsigned long long cycles);
 void CyclesLog(unsigned long long cycle, char *filename);
+void triggertimer();

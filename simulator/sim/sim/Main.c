@@ -186,3 +186,18 @@ void shutdownmethods(char* argv[], unsigned long long cycles)
 {
 	CyclesLog(cycles, argv[CYCLES]);
 }
+
+void triggertimer() {
+	if (ioregisters[TIMERENB] == 1) //check if timer enabled
+	{
+		if (ioregisters[TIMERCURR] < ioregisters[TIMERMAX]) 
+		{
+			ioregisters[TIMERCURR]++;
+		}
+		else
+		{
+			ioregisters[TIMERCURR] = 0;
+			ioregisters[IRQ0STS] = 1;
+		}
+	}
+}
