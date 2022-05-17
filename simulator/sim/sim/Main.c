@@ -178,11 +178,12 @@ void sevensegmenttoLog(unsigned long long cycle, char *filename)
 }
 void writeval2mon()
 {
-	unsigned int ofst = ioregisters[MONITORADDR];
 	unsigned char val = ioregisters[MONITORDATA];
-	int row = ofst/MON_SIZE;
-	int col = ofst%MON_SIZE;
-	changecell(row, col, val);
+	unsigned int ofst = ioregisters[MONITORADDR];
+	//int col = ofst%MON_SIZE;
+	//int row = ofst / MON_SIZE;
+
+	changecell(ofst/MON_SIZE, ofst%MON_SIZE, val);
 }
 void triggermon()
 {
