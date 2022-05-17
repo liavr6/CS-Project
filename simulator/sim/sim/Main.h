@@ -41,6 +41,9 @@
 #define TIMERENB 11
 #define TIMERCURR 12
 #define TIMERMAX 13
+#define MONITORADDR 20
+#define MONITORDATA 21
+#define MONITORCMD 22
 
 //default parameter from class report requirments
 #define IOREGS 23
@@ -70,11 +73,12 @@ typedef struct instruction
 FILE* read_file(char filename[], char chmod);
 void write_file(char *filename, char *strtowrite);
 char* substr(const char *src, int strt, int end);
-void updatepc(char type, char* cmd, int* cycles);
+void updatecyc(char type, char* cmd, int* cycles);
 void LedLog(unsigned long long cycle, char *filename);
 void sevensegmenttoLog(unsigned long long cycle, char *filename);
-void MonitorManager();
+void triggermon();
 void irqhandler(int pc, int *cycles);
 void shutdownmethods(char* argv[], unsigned long long cycles);
 void CyclesLog(unsigned long long cycle, char *filename);
 void triggertimer();
+void writeval2mon();

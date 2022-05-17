@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "monitor.c"
+
 int main(int argc, char *argv[])
 {
 	// Test to validate of file num from input command.
@@ -19,7 +21,7 @@ int main(int argc, char *argv[])
 	
 	
 	
-	unsigned int hwreg[IOREGS] = { 0 };//////////////////////////////////////////////
+	//unsigned int hwreg[IOREGS] = { 0 };//////////////////////////////////////////////
 
 
 	unsigned int oldsegval = 0;
@@ -72,14 +74,14 @@ int main(int argc, char *argv[])
 			
 			//////////////switch comes here!!!!//////////
 
-			updatepc("R", "sw", cycles);//update cycles count
+			updatecyc("R", "sw", cycles);//update cycles count
 			//ioregisters[8]++;//update current num of clock cycles
 
 
 			// Logs and end of process stage
 			LedLog(cycles, argv[LEDS]);
 			sevensegmentLog(cycles,argv[DISPLAY7SEG]);
-			MonitorManager();
+			triggermon();
 
 			// check irq
 			irqhandler(&pc, cycles);//complete!!!!!!!!!!!!!!!!!!!
@@ -122,7 +124,7 @@ char* substr(const char *src, int strt, int end)
 	strncpy(dst, (src + strt), len);
 	return dst;
 }
-void updatepc(char type, char* cmd, int* cycles)
+void updatecyc(char type, char* cmd, int* cycles)
 {
 	if (type == "R")
 	{
@@ -174,8 +176,87 @@ void sevensegmenttoLog(unsigned long long cycle, char *filename)
 		free(line);
 	}
 }
-void MonitorManager()
+void writeval2mon()
 {
+	unsigned int ofst = ioregisters[MONITORADDR];
+	unsigned char val = ioregisters[MONITORDATA];
+	int row = ofst/MON_SIZE;
+	int col = ofst%MON_SIZE;
+	changecell(row, col, val);
+}
+void triggermon()
+{
+	//check if need to write val to mon
+	unsigned int boolwritemon = ioregisters[MONITORCMD];
+	if (boolwritemon)
+	{
+		writeval2mon();
+		ioregisters[MONITORCMD] = 0;//////is it ok in the if?????????????????
+	}
+
+//
+//	char screen[SCREEN_SIZE][SCREEN_SIZE];
+//
+//	void initializeScreen() {
+//		// Set all pixels to 0.
+//		for (int i = 0; i < SCREEN_SIZE; i++) {
+//			for (int j = 0; j < SCREEN_SIZE; j++) {
+//				screen[i][j] = 0;
+//			}
+//		}
+//	}
+//
+//	void updatePixel(int row, int col, char color) {
+//		screen[row][col] = color;
+//	}
+//
+//	void DumpMonitorFiles(char* txtFileName, char* yuvFileName) {
+//		FILE* monTxt;
+//		FILE* monYuv;
+//
+//		monYuv = fopen(yuvFileName, "wb+");
+//		monTxt = fopen(txtFileName, "w+");
+//
+//		if (monYuv == NULL || monTxt == NULL) {
+//			printf("[ERROR] Failed to open monitor output files for writing.\nExiting.");
+//			exit(-1);
+//		}
+//
+//		for (int row = 0; row < SCREEN_SIZE; row++)
+//		{
+//			for (int col = 0; col < SCREEN_SIZE; col++)
+//			{
+//				// For monitor.txt, write every pixel to a separate line.
+//				fprintf(monTxt, "%02x\n", 0xFF & screen[row][col]);
+//				// For monitor.yuv, write every pixel to a binary
+//				char byte_to_write = 0xFF & screen[row][col];
+//				fwrite(&byte_to_write, sizeof(byte_to_write), 1, monYuv);
+//			}
+//		}
+//
+//		// Close files.
+//		fclose(monTxt);
+//		fclose(monYuv);
+//	}
+//	void HandleMonitor() {
+//		// If we need to write to monitor, do it now.
+//		unsigned int shouldWriteToMonitor = hw_reg[MONITORCMD];
+//
+//		if (shouldWriteToMonitor) {
+//			WriteToMonitor();
+//		}
+//		hw_reg[MONITORCMD] = 0;
+//	}
+//
+//	void WriteToMonitor() {
+//		unsigned char color = hw_reg[MONITORDATA];
+//		unsigned int offset = hw_reg[MONITOROFFSET];
+//
+//		int row = offset / SCREEN_SIZE;
+//		int col = offset % SCREEN_SIZE;
+//
+//		updatePixel(row, col, color);
+//	}
 
 }
 void irqhandler(int pc, int *cycles)
@@ -187,17 +268,20 @@ void shutdownmethods(char* argv[], unsigned long long cycles)
 	CyclesLog(cycles, argv[CYCLES]);
 }
 
-void triggertimer() {
-	if (ioregisters[TIMERENB] == 1) //check if timer enabled
+void triggertimer() 
+{
+	//check if timer enabled
+	if (ioregisters[TIMERENB] == 1) 
 	{
+		//check if val is valid
 		if (ioregisters[TIMERCURR] < ioregisters[TIMERMAX]) 
 		{
 			ioregisters[TIMERCURR]++;
 		}
 		else
 		{
-			ioregisters[TIMERCURR] = 0;
 			ioregisters[IRQ0STS] = 1;
+			ioregisters[TIMERCURR] = 0;
 		}
 	}
 }
