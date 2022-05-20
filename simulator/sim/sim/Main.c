@@ -3,6 +3,7 @@
 #include "Main.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include "monitor.c"
 
@@ -283,6 +284,75 @@ void triggertimer()
 		{
 			ioregisters[IRQ0STS] = 1;
 			ioregisters[TIMERCURR] = 0;
+		}
+	}
+}
+
+
+int* irq2arr;
+int irq2arrlen;
+//void set_irq2_arr(char* file_path)
+//{
+//	FILE* fp;
+//	char* line = NULL;
+//	size_t len = 0;
+//	size_t read;
+//	irq2arr = (int*)malloc(sizeof(int));
+//	irq2arrlen = 0;
+//	fp = fopen(file_path, "r");
+//	if (fp == NULL)
+//	{
+//		exit(1);
+//	}
+//
+//	while ((read = getline(&line, &len, fp)) != -1)
+//	{
+//		printf("Retrieved line of length %zu:\n", read);
+//		printf("%s", line);
+//		irq2arr = (int*)realloc(irq2arr,(irq2arrlen + 1)*sizeof(int));
+//		int val = strtoul(line, NULL, 0);
+//		irq2arr[irq2arrlen] = val;
+//		irq2arrlen++;
+//	}
+//
+//	fclose(fp);
+//	if (line)
+//	{
+//		free(line);
+//	}
+//}
+void set_irq2_arr(char* file_path)
+{
+	FILE* fp;
+	fopen(&fp, file_path, "r");    //fopen_s!!!!!!********************************************
+
+	size_t line_size = 255;
+	char* line = malloc(line_size);
+	irq2arr = (int*)malloc(sizeof(int));
+	irq2arrlen = 0;
+	//check if exists
+	if (fp == NULL) {
+		exit(1);
+	}
+	//read lines
+	while (fgets(line, line_size, fp) != NULL)
+	{
+		irq2arr = (int*)realloc(irq2arr, (irq2arrlen + 1) * sizeof(int));
+		int val = strtoul(line, NULL, 0);
+		irq2arr[irq2arrlen] = val;
+		irq2arrlen++;
+	}
+	free(line);
+}
+
+void check_irq2arr(unsigned long long cycles)
+{
+	for (size_t i = 0; i < irq2arrlen; i++)
+	{
+		if (irq2arr[i] == cycles)
+		{
+			ioregisters[IRQ2STS] = 1;
+			break;
 		}
 	}
 }

@@ -38,6 +38,7 @@
 #define MONITOR_YUVC 'wb'
 
 #define IRQ0STS 3
+#define IRQ2STS 5
 #define TIMERENB 11
 #define TIMERCURR 12
 #define TIMERMAX 13
@@ -82,3 +83,5 @@ void shutdownmethods(char* argv[], unsigned long long cycles);
 void CyclesLog(unsigned long long cycle, char *filename);
 void triggertimer();
 void writeval2mon();
+void set_irq2_arr(char* file_path);
+void check_irq2arr(unsigned long long cycles);
