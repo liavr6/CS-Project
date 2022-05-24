@@ -32,32 +32,34 @@ void changecell(int row, int col, char val)
 
 
 
-	//void DumpMonitorFiles(char* txtFileName, char* yuvFileName) 
-	//{
-	//	FILE* monTxt;
-	//	FILE* monYuv;
+	void writeLogMon(char* y_file, char* data_file) 
+	{
+		//open files and check validity
+		FILE* mon_data;
+		mon_data = fopen(data_file, "w+");
+		if (mon_data == NULL)
+		{
+			exit(-1);
+		}
+		FILE* mon_y;
+		mon_y = fopen(y_file, "wb+");
+		if (mon_y == NULL)
+		{
+		exit(-1);
+		}
 
-	//	monYuv = fopen(yuvFileName, "wb+");
-	//	monTxt = fopen(txtFileName, "w+");
-
-	//	if (monYuv == NULL || monTxt == NULL) {
-	//		printf("[ERROR] Failed to open monitor output files for writing.\nExiting.");
-	//		exit(-1);
-	//	}
-
-	//	for (int row = 0; row < SCREEN_SIZE; row++)
-	//	{
-	//		for (int col = 0; col < SCREEN_SIZE; col++)
-	//		{
-	//			// For monitor.txt, write every pixel to a separate line.
-	//			fprintf(monTxt, "%02x\n", 0xFF & screen[row][col]);
-	//			// For monitor.yuv, write every pixel to a binary
-	//			char byte_to_write = 0xFF & screen[row][col];
-	//			fwrite(&byte_to_write, sizeof(byte_to_write), 1, monYuv);
-	//		}
-	//	}
-
-	//	// Close files.
-	//	fclose(monTxt);
-	//	fclose(monYuv);
-	//}
+		for (int i = 0; i < MON_SIZE; i++)
+		{
+			for (int j = 0; j < MON_SIZE; j++)
+		{
+			//pixel to binary in monitor.yuv
+			char data = mon[i][j] & 0xFF;/////////////////////////////////check FF
+			fwrite(&data, sizeof(data), 1, mon_y);
+			// each pixel to separate line in monitor.txt
+			fprintf(mon_data,"%02x\n",mon[i][j]&0xFF);/////////////////////////////////check FF
+			}
+		}
+		//close 
+		fclose(mon_y);
+		fclose(mon_data);
+	}

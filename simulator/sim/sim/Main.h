@@ -39,6 +39,8 @@
 
 #define IRQ0STS 3
 #define IRQ2STS 5
+#define IRQRETURN 7
+#define IRQHANDLER 12
 #define TIMERENB 11
 #define TIMERCURR 12
 #define TIMERMAX 13
@@ -61,6 +63,7 @@
 
 unsigned int oldsegval = 0;
 unsigned int oldledstate = 0;
+int irqstat = 0;
 
 int ioregisters[IOREGS] = { 0 };
 

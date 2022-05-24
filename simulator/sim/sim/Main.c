@@ -70,9 +70,7 @@ int main(int argc, char *argv[])
 		//main work loop
 		do
 		{
-			//updating interuption station
-			irqstat = ((ioregisters[0] & ioregisters[3]) | (ioregisters[1] & ioregisters[4]) | (ioregisters[2] & ioregisters[5]));
-			
+
 			//////////////switch comes here!!!!//////////
 
 			updatecyc("R", "sw", cycles);//update cycles count
@@ -91,7 +89,7 @@ int main(int argc, char *argv[])
 
 		shutdownmethods(argv, cycles);
 }	
-
+int interuptflag = 0;
 //function to read input files
 FILE* read_file(char filename[], char chmod)
 {
@@ -189,7 +187,7 @@ void writeval2mon()
 void triggermon()
 {
 	//check if need to write val to mon
-	unsigned int boolwritemon = ioregisters[MONITORCMD];
+	unsigned int boolwritemon = ioregisters[MONITORCMD];//// check again unsigned!!!!!!!!!
 	if (boolwritemon)
 	{
 		writeval2mon();
@@ -261,15 +259,10 @@ void triggermon()
 //	}
 
 }
-void irqhandler(int pc, int *cycles)
-{
-
-}
 void shutdownmethods(char* argv[], unsigned long long cycles)
 {
 	CyclesLog(cycles, argv[CYCLES]);
 }
-
 void triggertimer() 
 {
 	//check if timer enabled
@@ -287,7 +280,6 @@ void triggertimer()
 		}
 	}
 }
-
 
 int* irq2arr;
 int irq2arrlen;
@@ -344,7 +336,6 @@ void set_irq2_arr(char* file_path)
 	}
 	free(line);
 }
-
 void check_irq2arr(unsigned long long cycles)
 {
 	for (size_t i = 0; i < irq2arrlen; i++)
@@ -354,5 +345,24 @@ void check_irq2arr(unsigned long long cycles)
 			ioregisters[IRQ2STS] = 1;
 			break;
 		}
+	}
+}
+void irqhandler(int pc, int *cycles)
+{
+///////////////////////////////////////////remember to add to retri!!!!*****************
+	if (interuptflag == 1)
+	{
+		return;
+	}
+	triggertimer();
+	check_irq2arr(cycles);
+	//updating interuption station
+	irqstat = ((ioregisters[0] & ioregisters[3]) | (ioregisters[1] & ioregisters[4]) | (ioregisters[2] & ioregisters[5]));
+	if (irqstat)
+	{
+		interuptflag = 1;
+		ioregisters[IRQRETURN] = pc;
+		pc = 0xFFF&ioregisters[IRQHANDLER]; //12 bits so we don't overflow.
+		////////////////////////////////////////////////////////////////////////////////check FFF!!!!!!!!!!!!
 	}
 }
