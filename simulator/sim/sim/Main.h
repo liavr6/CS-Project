@@ -49,6 +49,7 @@
 #define MONITORCMD 22
 
 //default parameter from class report requirments
+
 #define IOREGS 23
 #define DATA_SIZE 8
 #define INT_SIZE 32
@@ -59,8 +60,8 @@
 #define MONITOR_PIXELS (256*256)
 #define DISK_CYCLES 1024
 #define MAX_LINES 4096
-#define SECTOR_SIZE	128		
-
+#define SECTOR_SIZE	5		
+#define SECTOR_COUNT 128
 unsigned int oldsegval = 0;
 unsigned int oldledstate = 0;
 int irqstat = 0;
@@ -88,3 +89,5 @@ void triggertimer();
 void writeval2mon();
 void set_irq2_arr(char* file_path);
 void check_irq2arr(unsigned long long cycles);
+void outputdisc(char* outputfile);
+void inputdisc(char* inputfile);

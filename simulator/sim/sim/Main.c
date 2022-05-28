@@ -90,6 +90,8 @@ int main(int argc, char *argv[])
 		shutdownmethods(argv, cycles);
 }	
 int interuptflag = 0;
+int hardrive[SECTOR_COUNT][SECTOR_SIZE]={0};
+
 //function to read input files
 FILE* read_file(char filename[], char chmod)
 {
@@ -358,11 +360,46 @@ void irqhandler(int pc, int *cycles)
 	check_irq2arr(cycles);
 	//updating interuption station
 	irqstat = ((ioregisters[0] & ioregisters[3]) | (ioregisters[1] & ioregisters[4]) | (ioregisters[2] & ioregisters[5]));
-	if (irqstat)
+	if (irqstat==1)////check one!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	{
 		interuptflag = 1;
 		ioregisters[IRQRETURN] = pc;
-		pc = 0xFFF&ioregisters[IRQHANDLER]; //12 bits so we don't overflow.
+		pc = 0xFFF&ioregisters[IRQHANDLER]; //12 bits so we don't overflow
 		////////////////////////////////////////////////////////////////////////////////check FFF!!!!!!!!!!!!
 	}
+}
+
+
+void outputdisc(char* outputfile) 
+{
+	// write disc data to file
+	int i = 0;int j = 0;
+	FILE* f = fopen(outputfile, "w+");
+	for (int i = 0; i < SECTOR_SIZE; i++)
+	{
+		for (int j = 0; j < SECTOR_COUNT; j++)
+			{
+				fprintf(f,"%02x\n",hardrive[i][j]);
+			}
+	}
+	fclose(f);
+}
+void inputdisc(char* inputfile) {
+	// read memory from file into an array 
+	int i = 0;
+	int j = 0;
+	FILE* f = fopen(inputfile, "r");
+	char buf_array[MAX_INPUT_LINE];
+	while (fgets(buf_array,(MAX_INPUT_LINE-1), f))
+	{
+		buf_array[strcspn(buf_array, "\n")] = 0;
+		int val = strtoul(buf_array, NULL, 0);
+		hardrive[i][j] = val;
+		j = ((j+1)%SECTOR_COUNT);
+		if (j == 0)
+		{
+			i = ((i+1)%SECTOR_SIZE);
+		}
+	}
+	fclose(f);
 }
