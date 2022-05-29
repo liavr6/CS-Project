@@ -6,6 +6,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "monitor.c"
+#include "monitor.h"
+
+int interuptflag = 0;
+int hardrive[SECTOR_COUNT][SECTOR_SIZE] = { 0 };
+int rammemory[LINES_MAX_SIZE] = { 0 };
 
 int main(int argc, char *argv[])
 {
@@ -19,7 +24,7 @@ int main(int argc, char *argv[])
 	int ioregisters[IOREGS] = { 0 };
 	int pc = 0; int irqstat = 0;
 	int* cycles = 0;
-	
+	int diskcyc = 0;
 	
 	
 	//unsigned int hwreg[IOREGS] = { 0 };//////////////////////////////////////////////
@@ -70,6 +75,9 @@ int main(int argc, char *argv[])
 		//main work loop
 		do
 		{
+			// check irq
+			irqhandler(&pc, cycles);//complete!!!!!!!!!!!!!!!!!!!
+			diskcyc = hdmanager(rammemory, diskcyc);
 
 			//////////////switch comes here!!!!//////////
 
@@ -82,15 +90,13 @@ int main(int argc, char *argv[])
 			sevensegmentLog(cycles,argv[DISPLAY7SEG]);
 			triggermon();
 
-			// check irq
-			irqhandler(&pc, cycles);//complete!!!!!!!!!!!!!!!!!!!
+
 
 		} while (pc != -1);
 
 		shutdownmethods(argv, cycles);
 }	
-int interuptflag = 0;
-int hardrive[SECTOR_COUNT][SECTOR_SIZE]={0};
+
 
 //function to read input files
 FILE* read_file(char filename[], char chmod)
@@ -142,16 +148,16 @@ void updatecyc(char type, char* cmd, int* cycles)
 }
 void LedLog(unsigned long long cycle, char *filename)
 {
-	unsigned int curledstate = ioregisters[9];
-	if (curledstate != oldsegval)
+	//unsigned int curledstate = ioregisters[9];///////////check if works
+	if (ioregisters[9] != oldsegval)
 	{
 		char* line = (char*)malloc(sizeof(char) * 500);///////change 500?!!!!!!
 		if (line == NULL) {
 			exit(1);
 		}
-		sprintf(line, "%d %08x", cycle, curledstate);
+		sprintf(line, "%d %08x", cycle, ioregisters[9]);
 		write_file(filename, line);
-		oldledstate = curledstate;
+		oldledstate = ioregisters[9];
 		free(line);
 	}
 }
@@ -388,12 +394,13 @@ void inputdisc(char* inputfile) {
 	// read memory from file into an array 
 	int i = 0;
 	int j = 0;
+	int val;
 	FILE* f = fopen(inputfile, "r");
 	char buf_array[MAX_INPUT_LINE];
 	while (fgets(buf_array,(MAX_INPUT_LINE-1), f))
 	{
-		buf_array[strcspn(buf_array, "\n")] = 0;
-		int val = strtoul(buf_array, NULL, 0);
+		buf_array[strcspn(buf_array,"\n")]=0;
+		val = strtoul(buf_array, NULL, 0);
 		hardrive[i][j] = val;
 		j = ((j+1)%SECTOR_COUNT);
 		if (j == 0)
@@ -402,4 +409,64 @@ void inputdisc(char* inputfile) {
 		}
 	}
 	fclose(f);
+}
+void logdrivetofile(char* fileName) 
+{
+	// write drive to file
+	int totsize = SECTOR_SIZE*SECTOR_COUNT;
+	FILE* fp;
+	fp = fopen(fileName, "w+");
+	for (int i = 0; i<totsize;i++)
+	{
+		fprintf(fp,"%05X\n",hardrive[i/SECTOR_SIZE][i%SECTOR_SIZE]);
+	}
+	fclose(fp);
+}
+
+
+
+int hdmanager(int rammemory[], int diskcyc)
+{
+	int disksectorid;
+	int disksubsectorid;
+	int  memory_id;
+	//check if command exists
+	if (ioregisters[DISKCMD] != 0)
+	{
+		// sets disk to bussy. diskstatus to 1
+		ioregisters[DISKSTS] = 1;
+		// 1024/128 = 8 cycles
+		// read or write every 8 cycles 
+		//needs to wait 1024 cycles and each sector size is 128
+		if (diskcyc %8==0)
+		{
+			memory_id =(ioregisters[DISKBFR]+(diskcyc /8))%LINES_MAX_SIZE;
+			disksectorid = ioregisters[DISKSECTOR]%SECTORS;
+			disksubsectorid =(diskcyc /8)%SECTOR_SIZE;
+			// if diskcmd = 1 its a read command
+			if (ioregisters[DISKCMD] == 1)
+			{
+				rammemory[memory_id] = hardrive[disksectorid][disksubsectorid];
+			}
+			// if diskcmd = 2 its a write command
+			else				
+			{
+				hardrive[disksectorid][disksubsectorid] = rammemory[memory_id];
+			}
+		}
+		if (diskcyc<(DISK_CYCLES-1))
+			diskcyc++;
+		else
+		{
+			//reseting everything
+			diskcyc = 0;
+			// set irq1sts = 1 and trigger irq
+			ioregisters[IRQ1STS] = 1;	
+			// set diskcmd to 0 so there is no active command
+			ioregisters[DISKCMD] = 0;	
+			// set diskstatus to 0 and free disk to work
+			ioregisters[DISKSTS] = 0;	
+		}
+	}
+	return diskcyc;
 }

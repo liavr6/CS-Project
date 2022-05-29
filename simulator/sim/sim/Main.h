@@ -38,12 +38,17 @@
 #define MONITOR_YUVC 'wb'
 
 #define IRQ0STS 3
+#define IRQ1STS 4
 #define IRQ2STS 5
 #define IRQRETURN 7
-#define IRQHANDLER 12
+#define IRQHANDLER 6
 #define TIMERENB 11
 #define TIMERCURR 12
 #define TIMERMAX 13
+#define DISKCMD 14
+#define DISKSECTOR 15
+#define DISKBFR 16
+#define DISKSTS 17
 #define MONITORADDR 20
 #define MONITORDATA 21
 #define MONITORCMD 22
@@ -59,7 +64,7 @@
 #define INST_SIZE 12
 #define MONITOR_PIXELS (256*256)
 #define DISK_CYCLES 1024
-#define MAX_LINES 4096
+#define LINES_MAX_SIZE 4096
 #define SECTOR_SIZE	5		
 #define SECTOR_COUNT 128
 unsigned int oldsegval = 0;
@@ -91,3 +96,5 @@ void set_irq2_arr(char* file_path);
 void check_irq2arr(unsigned long long cycles);
 void outputdisc(char* outputfile);
 void inputdisc(char* inputfile);
+void logdrivetofile(char* fileName);
+int hdmanager(int rammemory[], int diskcyc);
