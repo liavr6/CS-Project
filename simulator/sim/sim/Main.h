@@ -10,7 +10,7 @@
 #define DMEMIN 2
 #define DISKIN 3
 #define IRQ2IN 4
-#define DMEMOUT 5
+#define MEMOUT 5
 #define REGOUT 6
 #define TRACE 7
 #define HWREGTRACE 8
@@ -23,7 +23,7 @@
 
 // CL arguments chmod
 #define IMEMINC 'r'
-#define DMEMINC 'r'
+#define MEMINC 'r'
 #define DISKINC 'r'
 #define IRQ2INC 'r'
 #define DMEMOUTC 'w'
@@ -98,3 +98,6 @@ void outputdisc(char* outputfile);
 void inputdisc(char* inputfile);
 void logdrivetofile(char* fileName);
 int hdmanager(int rammemory[], int diskcyc);
+void logmemout(int data[], FILE* fmemout);
+int lastindexinmem(int memory[]);
+void logregout(int hwreg[], FILE* fregout);

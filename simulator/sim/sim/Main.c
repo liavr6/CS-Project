@@ -11,7 +11,8 @@
 int interuptflag = 0;
 int hardrive[SECTOR_COUNT][SECTOR_SIZE] = { 0 };
 int rammemory[LINES_MAX_SIZE] = { 0 };
-
+int registers[REGS] = { 0 };
+int ioregisters[IOREGS] = { 0 };
 int main(int argc, char *argv[])
 {
 	// Test to validate of file num from input command.
@@ -20,13 +21,14 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	// initialize components
-	int registers[REGS] = { 0 };
-	int ioregisters[IOREGS] = { 0 };
-	int pc = 0; int irqstat = 0;
+
+	int pc = 0; 
+	int irqstat = 0;
 	int* cycles = 0;
 	int diskcyc = 0;
 	
-	
+	inputdisc(argv[DISKIN]);//read data from harddrive
+	set_irq2_arr(argv[IRQ2IN]);
 	//unsigned int hwreg[IOREGS] = { 0 };//////////////////////////////////////////////
 
 
@@ -82,8 +84,7 @@ int main(int argc, char *argv[])
 			//////////////switch comes here!!!!//////////
 
 			updatecyc("R", "sw", cycles);//update cycles count
-			//ioregisters[8]++;//update current num of clock cycles
-
+			triggertimer();
 
 			// Logs and end of process stage
 			LedLog(cycles, argv[LEDS]);
@@ -270,6 +271,11 @@ void triggermon()
 void shutdownmethods(char* argv[], unsigned long long cycles)
 {
 	CyclesLog(cycles, argv[CYCLES]);
+	logdrivetofile(argv[DISKOUT]);
+	writeLogMon(argv[MONITOR], argv[MONITOR_YUV]);
+	write_memout(rammemory,argv[MEMOUT]);
+	logregout(registers, argv[REGOUT]);
+	//////////remember to open and close file add file pointers!!!!!!!!!11!!!!!!!!!!@#$%^&
 }
 void triggertimer() 
 {
@@ -374,8 +380,7 @@ void irqhandler(int pc, int *cycles)
 		////////////////////////////////////////////////////////////////////////////////check FFF!!!!!!!!!!!!
 	}
 }
-
-
+//////////check if redundant!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 void outputdisc(char* outputfile) 
 {
 	// write disc data to file
@@ -385,11 +390,11 @@ void outputdisc(char* outputfile)
 	{
 		for (int j = 0; j < SECTOR_COUNT; j++)
 			{
-				fprintf(f,"%02x\n",hardrive[i][j]);
+				fprintf(f,"%05x\n",hardrive[i][j]);/////////////////////////////5 or 2?
 			}
 	}
 	fclose(f);
-}
+}////////////////////////redundant??!!!!!
 void inputdisc(char* inputfile) {
 	// read memory from file into an array 
 	int i = 0;
@@ -422,9 +427,6 @@ void logdrivetofile(char* fileName)
 	}
 	fclose(fp);
 }
-
-
-
 int hdmanager(int rammemory[], int diskcyc)
 {
 	int disksectorid;
@@ -438,9 +440,9 @@ int hdmanager(int rammemory[], int diskcyc)
 		// 1024/128 = 8 cycles
 		// read or write every 8 cycles 
 		//needs to wait 1024 cycles and each sector size is 128
-		if (diskcyc %8==0)
+		if (diskcyc%8==0)
 		{
-			memory_id =(ioregisters[DISKBFR]+(diskcyc /8))%LINES_MAX_SIZE;
+			memory_id=(ioregisters[DISKBFR]+(diskcyc/8))%LINES_MAX_SIZE;
 			disksectorid = ioregisters[DISKSECTOR]%SECTORS;
 			disksubsectorid =(diskcyc /8)%SECTOR_SIZE;
 			// if diskcmd = 1 its a read command
@@ -454,8 +456,10 @@ int hdmanager(int rammemory[], int diskcyc)
 				hardrive[disksectorid][disksubsectorid] = rammemory[memory_id];
 			}
 		}
-		if (diskcyc<(DISK_CYCLES-1))
+		if (diskcyc < (DISK_CYCLES - 1))
+		{
 			diskcyc++;
+		}
 		else
 		{
 			//reseting everything
@@ -469,4 +473,35 @@ int hdmanager(int rammemory[], int diskcyc)
 		}
 	}
 	return diskcyc;
+}
+
+
+//getting the index of last line in memory which !=0
+int lastindexinmem(int memory[])
+{
+	int last = 0;
+	for (int i = 0; i < LINES_MAX_SIZE; i++)
+	{
+		if (memory[i] != 0)
+		{
+			last = i;
+		}
+	}
+	return last;
+}
+// output memout file
+void logmemout(int data[], FILE* fmemout)
+{//////////////////////////////////////////////////////////////////remember to open and close file
+	int lastval = lastindexinmem(data);
+	for (int i = 0;i<=lastval;i++)
+	{
+		fprintf(fmemout, "%08X\n", data[i]);
+	}
+}
+
+//outputregout file 
+void logregout(int hwreg[], FILE* fregout)
+{
+	for (int i = 2; i<REGS; i++)
+		fprintf(fregout, "%08X\n", hwreg[i]);
 }
