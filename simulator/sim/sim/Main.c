@@ -1,20 +1,34 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include <stdio.h>
+
 #include "Main.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include "monitor.c"
 #include "monitor.h"
+
 
 int interuptflag = 0;
 int hardrive[SECTOR_COUNT][SECTOR_SIZE] = { 0 };
 int rammemory[LINES_MAX_SIZE] = { 0 };
 int registers[REGS] = { 0 };
 int ioregisters[IOREGS] = { 0 };
+int* irq2arr;
+int irq2arrlen;
+
 int main(int argc, char *argv[])
 {
+	argc = 14;
+	argv[0] = "program.exe";
+	argv[1] = "..\\memin.txt";
+	argv[2] = "..\\diskin.txt";
+	argv[3] = "..\\irq2in.txt";
+	argv[4] = "..\\memout.txt";
+	argv[5] = "..\\regout.txt";
+	argv[6] = "..\\trace.txt";
+	argv[7] = "..\\hwregtrace.txt";
+	argv[8] = "..\\cycles.txt";
+	argv[9] = "..\\leds.txt";
+	argv[10] = "..\\display7seg.txt";
+	argv[11] = "..\\diskout.txt";
+	argv[12] = "..\\monitor.txt";
+	argv[13] = "..\\monitor.yuv";
 	// Test to validate of file num from input command.
 	if (argc != 14) {
 		printf("Error: incorrect number of input files - 14 required\nExiting.");
@@ -24,7 +38,9 @@ int main(int argc, char *argv[])
 
 	int pc = 0; 
 	int irqstat = 0;
-	int* cycles = 0;
+	int* cycles;
+	cycles = (int*)malloc(sizeof(int));
+	*cycles = 0;
 	int diskcyc = 0;
 	
 	inputdisc(argv[DISKIN]);//read data from harddrive
@@ -36,44 +52,6 @@ int main(int argc, char *argv[])
 	unsigned int oldledstate = 0;
 
 
-#pragma region shit
-//#pragma region fpRegion
-//	//file pointers definition
-//	FILE *file_imemin = NULL, *file_dmemin = NULL, *file_diskin = NULL, *file_irq2in = NULL, *file_dmemout = NULL, *file_regout = NULL,
-//		*file_trace = NULL, *file_hwregtrace = NULL, *file_cycles = NULL, *file_leds = NULL, *file_display7seg = NULL,
-//		*file_diskout = NULL, *file_monitor_txt = NULL, *file_monitor_yuv = NULL;
-//#pragma endregion
-	////read the input files
-	//	read_file(file_hwregtrace, argv[HWREGTRACE], HWREGTRACEC);
-	//	read_file(file_trace, argv[CYCLES], CYCLESC);
-	//	read_file(file_leds, argv[LEDS], LEDSC);
-	//	read_file(file_cycles, argv[CYCLESC], CYCLES);
-	//	read_file(file_dmemout, argv[DMEMOUT], DMEMOUTC);
-	//	read_file(file_regout, argv[REGOUTC], REGOUT);
-	//	read_file(file_display7seg, argv[DISPLAY7SEG], DISPLAY7SEGC);
-	//	read_file(file_diskout, argv[DISKOUTC], DISKOUT);
-	//	read_file(file_monitor_txt, argv[MONITORC], MONITOR);
-	//	read_file(file_monitor_yuv, argv[MONITOR_YUV], MONITOR_YUVC);
-	//	read_file(file_irq2in, argv[IRQ2INC], IRQ2IN);
-	//	read_file(file_diskin, argv[DISKIN], DISKINC);
-	//	read_file(file_dmemin, argv[DMEMIN], DMEMINC);
-	//	read_file(file_imemin, argv[IMEMIN], IMEMINC);
-	//// close input files
-	//	fclose(file_hwregtrace);
-	//	fclose(file_trace);
-	//	fclose(file_leds);
-	//	fclose(file_cycles);
-	//	fclose(file_dmemout);
-	//	fclose(file_regout);
-	//	fclose(file_display7seg);
-	//	fclose(file_diskout);
-	//	fclose(file_monitor_txt);
-	//	fclose(file_monitor_yuv);
-	//	fclose(file_irq2in);
-	//	fclose(file_diskin);
-	//	fclose(file_dmemin);
-	//	fclose(file_imemin);
-#pragma endregion
 		//main work loop
 		do
 		{
@@ -88,11 +66,11 @@ int main(int argc, char *argv[])
 
 			// Logs and end of process stage
 			LedLog(cycles, argv[LEDS]);
-			sevensegmentLog(cycles,argv[DISPLAY7SEG]);
+			sevensegmenttoLog(cycles,argv[DISPLAY7SEG]);
 			triggermon();
 
 
-
+			pc = -1;
 		} while (pc != -1);
 
 		shutdownmethods(argv, cycles);
@@ -147,38 +125,45 @@ void updatecyc(char type, char* cmd, int* cycles)
 		*cycles += 1;
 	}
 }
-void LedLog(unsigned long long cycle, char *filename)
+void LedLog(int *cycles, char *filename)
 {
 	//unsigned int curledstate = ioregisters[9];///////////check if works
-	if (ioregisters[9] != oldsegval)
+	if (ioregisters[LEDS] != oldsegval)
 	{
 		char* line = (char*)malloc(sizeof(char) * 500);///////change 500?!!!!!!
 		if (line == NULL) {
 			exit(1);
 		}
-		sprintf(line, "%d %08x", cycle, ioregisters[9]);
+		sprintf(line, "%d %08X\n", *cycles, ioregisters[LEDS]);
+		//fprintf(fp_leds, "%u %08x\n", ioreg[8], ioreg[9]);
 		write_file(filename, line);
-		oldledstate = ioregisters[9];
+		oldledstate = ioregisters[LEDS];
 		free(line);
 	}
 }
-void CyclesLog(unsigned long long cycle, char *filename)
+void CyclesLog(int *cycles, char *filename)
 {
 	char line[100];
-		printf(line, "%d", cycle);
-		write_file(filename, line);
+	FILE *fp = fopen(filename, "w+");
+
+		sprintf(line, "%d", *cycles);
+		// write to text file
+		fprintf(fp, line);
+		// close file
+		fclose(fp);
+		//write_file(filename, line);
 		//free(line);
 }
-void sevensegmenttoLog(unsigned long long cycle, char *filename)
+void sevensegmenttoLog(int *cycles, char *filename)
 {
-	unsigned int cursegval = ioregisters[10];
+	unsigned int cursegval = ioregisters[DISPLAY7SEG];
 	if (cursegval != oldsegval)
 	{
 		char* line = (char*)malloc(sizeof(char) * 500);///////change 500?!!!!!!
 		if (line == NULL) {
 			exit(1);
 		}
-		sprintf(line, "%d %08x", cycle, cursegval);
+		sprintf(line, "%d %08X\n", *cycles, cursegval);
 		write_file(filename, line);
 		oldsegval = cursegval;
 		free(line);
@@ -203,77 +188,13 @@ void triggermon()
 		ioregisters[MONITORCMD] = 0;//////is it ok in the if?????????????????
 	}
 
-//
-//	char screen[SCREEN_SIZE][SCREEN_SIZE];
-//
-//	void initializeScreen() {
-//		// Set all pixels to 0.
-//		for (int i = 0; i < SCREEN_SIZE; i++) {
-//			for (int j = 0; j < SCREEN_SIZE; j++) {
-//				screen[i][j] = 0;
-//			}
-//		}
-//	}
-//
-//	void updatePixel(int row, int col, char color) {
-//		screen[row][col] = color;
-//	}
-//
-//	void DumpMonitorFiles(char* txtFileName, char* yuvFileName) {
-//		FILE* monTxt;
-//		FILE* monYuv;
-//
-//		monYuv = fopen(yuvFileName, "wb+");
-//		monTxt = fopen(txtFileName, "w+");
-//
-//		if (monYuv == NULL || monTxt == NULL) {
-//			printf("[ERROR] Failed to open monitor output files for writing.\nExiting.");
-//			exit(-1);
-//		}
-//
-//		for (int row = 0; row < SCREEN_SIZE; row++)
-//		{
-//			for (int col = 0; col < SCREEN_SIZE; col++)
-//			{
-//				// For monitor.txt, write every pixel to a separate line.
-//				fprintf(monTxt, "%02x\n", 0xFF & screen[row][col]);
-//				// For monitor.yuv, write every pixel to a binary
-//				char byte_to_write = 0xFF & screen[row][col];
-//				fwrite(&byte_to_write, sizeof(byte_to_write), 1, monYuv);
-//			}
-//		}
-//
-//		// Close files.
-//		fclose(monTxt);
-//		fclose(monYuv);
-//	}
-//	void HandleMonitor() {
-//		// If we need to write to monitor, do it now.
-//		unsigned int shouldWriteToMonitor = hw_reg[MONITORCMD];
-//
-//		if (shouldWriteToMonitor) {
-//			WriteToMonitor();
-//		}
-//		hw_reg[MONITORCMD] = 0;
-//	}
-//
-//	void WriteToMonitor() {
-//		unsigned char color = hw_reg[MONITORDATA];
-//		unsigned int offset = hw_reg[MONITOROFFSET];
-//
-//		int row = offset / SCREEN_SIZE;
-//		int col = offset % SCREEN_SIZE;
-//
-//		updatePixel(row, col, color);
-//	}
-
 }
 void shutdownmethods(char* argv[], unsigned long long cycles)
 {
 	CyclesLog(cycles, argv[CYCLES]);
 	logdrivetofile(argv[DISKOUT]);
 	writeLogMon(argv[MONITOR], argv[MONITOR_YUV]);
-	write_memout(rammemory,argv[MEMOUT]);
+	logmemout(rammemory,argv[MEMOUT]);
 	logregout(registers, argv[REGOUT]);
 	//////////remember to open and close file add file pointers!!!!!!!!!11!!!!!!!!!!@#$%^&
 }
@@ -294,43 +215,9 @@ void triggertimer()
 		}
 	}
 }
-
-int* irq2arr;
-int irq2arrlen;
-//void set_irq2_arr(char* file_path)
-//{
-//	FILE* fp;
-//	char* line = NULL;
-//	size_t len = 0;
-//	size_t read;
-//	irq2arr = (int*)malloc(sizeof(int));
-//	irq2arrlen = 0;
-//	fp = fopen(file_path, "r");
-//	if (fp == NULL)
-//	{
-//		exit(1);
-//	}
-//
-//	while ((read = getline(&line, &len, fp)) != -1)
-//	{
-//		printf("Retrieved line of length %zu:\n", read);
-//		printf("%s", line);
-//		irq2arr = (int*)realloc(irq2arr,(irq2arrlen + 1)*sizeof(int));
-//		int val = strtoul(line, NULL, 0);
-//		irq2arr[irq2arrlen] = val;
-//		irq2arrlen++;
-//	}
-//
-//	fclose(fp);
-//	if (line)
-//	{
-//		free(line);
-//	}
-//}
 void set_irq2_arr(char* file_path)
 {
-	FILE* fp;
-	fopen(&fp, file_path, "r");    //fopen_s!!!!!!********************************************
+	FILE* fp=fopen(file_path, "r");    //fopen_s!!!!!!********************************************
 
 	size_t line_size = 255;
 	char* line = malloc(line_size);
@@ -474,8 +361,6 @@ int hdmanager(int rammemory[], int diskcyc)
 	}
 	return diskcyc;
 }
-
-
 //getting the index of last line in memory which !=0
 int lastindexinmem(int memory[])
 {
@@ -490,18 +375,24 @@ int lastindexinmem(int memory[])
 	return last;
 }
 // output memout file
-void logmemout(int data[], FILE* fmemout)
-{//////////////////////////////////////////////////////////////////remember to open and close file
+void logmemout(int data[], char* fileName)
+{
+	FILE* fmemout = fopen(fileName, "w+");
+	
 	int lastval = lastindexinmem(data);
 	for (int i = 0;i<=lastval;i++)
 	{
 		fprintf(fmemout, "%08X\n", data[i]);
 	}
+	fclose(fmemout);
 }
-
 //outputregout file 
-void logregout(int hwreg[], FILE* fregout)
+void logregout(int hwreg[], char* fileName)
 {
-	for (int i = 2; i<REGS; i++)
+	FILE* fregout = fopen(fileName, "w+");
+	for (int i = 2; i < REGS; i++)
+	{
 		fprintf(fregout, "%08X\n", hwreg[i]);
+	}
+	fclose(fregout);
 }

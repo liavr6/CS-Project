@@ -1,11 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
 #include "monitor.h"
-
-
 
 char mon[MON_SIZE][MON_SIZE];
 
@@ -28,11 +22,7 @@ void changecell(int row, int col, char val)
 }
 
 
-
-
-
-
-	void writeLogMon(char* y_file, char* data_file) 
+void writeLogMon(char* y_file, char* data_file) 
 	{
 		//open files and check validity
 		FILE* mon_data;

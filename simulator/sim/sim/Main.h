@@ -1,25 +1,25 @@
 //regular inclusions
 #include <stdlib.h> 
 #include <string.h>
-
 #include <stdio.h>
-#define _CRT_SECURE_NO_WARNINGS
+#include <stdbool.h>
+#include <stdio.h>
 
 // CL arguments order defenition
 #define IMEMIN 1
-#define DMEMIN 2
-#define DISKIN 3
-#define IRQ2IN 4
-#define MEMOUT 5
-#define REGOUT 6
-#define TRACE 7
-#define HWREGTRACE 8
-#define CYCLES 9
-#define LEDS 10
-#define DISPLAY7SEG 11
-#define DISKOUT 12
-#define MONITOR 13
-#define MONITOR_YUV 14
+//#define DMEMIN 2
+#define DISKIN 2
+#define IRQ2IN 3
+#define MEMOUT 4
+#define REGOUT 5
+#define TRACE 6
+#define HWREGTRACE 7
+#define CYCLES 8
+#define LEDS 9
+#define DISPLAY7SEG 10
+#define DISKOUT 11
+#define MONITOR 12
+#define MONITOR_YUV 13
 
 // CL arguments chmod
 #define IMEMINC 'r'
@@ -40,8 +40,9 @@
 #define IRQ0STS 3
 #define IRQ1STS 4
 #define IRQ2STS 5
-#define IRQRETURN 7
 #define IRQHANDLER 6
+#define IRQRETURN 7
+#define LEDS 9
 #define TIMERENB 11
 #define TIMERCURR 12
 #define TIMERMAX 13
@@ -63,6 +64,7 @@
 #define MAX_INPUT_LINE 500
 #define INST_SIZE 12
 #define MONITOR_PIXELS (256*256)
+#define MON_SIZE 256
 #define DISK_CYCLES 1024
 #define LINES_MAX_SIZE 4096
 #define SECTOR_SIZE	5		
@@ -71,7 +73,7 @@ unsigned int oldsegval = 0;
 unsigned int oldledstate = 0;
 int irqstat = 0;
 
-int ioregisters[IOREGS] = { 0 };
+//int ioregisters[IOREGS] = { 0 };
 
 // define structs for main
 typedef struct instruction
@@ -84,12 +86,11 @@ FILE* read_file(char filename[], char chmod);
 void write_file(char *filename, char *strtowrite);
 char* substr(const char *src, int strt, int end);
 void updatecyc(char type, char* cmd, int* cycles);
-void LedLog(unsigned long long cycle, char *filename);
-void sevensegmenttoLog(unsigned long long cycle, char *filename);
+void LedLog(int *cycles, char *filename);
 void triggermon();
 void irqhandler(int pc, int *cycles);
 void shutdownmethods(char* argv[], unsigned long long cycles);
-void CyclesLog(unsigned long long cycle, char *filename);
+void CyclesLog(int *cycles, char *filename);
 void triggertimer();
 void writeval2mon();
 void set_irq2_arr(char* file_path);
@@ -98,6 +99,7 @@ void outputdisc(char* outputfile);
 void inputdisc(char* inputfile);
 void logdrivetofile(char* fileName);
 int hdmanager(int rammemory[], int diskcyc);
-void logmemout(int data[], FILE* fmemout);
+void logmemout(int data[], char* fileName);
 int lastindexinmem(int memory[]);
-void logregout(int hwreg[], FILE* fregout);
+void logregout(int hwreg[], char* fileName);
+void sevensegmenttoLog(int *cycles, char *filename);
