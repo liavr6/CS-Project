@@ -16,9 +16,9 @@ void initMon()
 }
 
 //changes cell value when triggered
-void changecell(int row, int col, char val)
+void changecell(int i, int j, char val)
 {
-	mon[row][col] = val;
+	mon[i][j] = val;
 }
 
 
@@ -46,7 +46,7 @@ void writeLogMon(char* y_file, char* data_file)
 			char data = mon[i][j] & 0xFF;/////////////////////////////////check FF
 			fwrite(&data, sizeof(data), 1, mon_y);
 			// each pixel to separate line in monitor.txt
-			fprintf(mon_data,"%02x\n",mon[i][j]&0xFF);/////////////////////////////////check FF
+			fprintf(mon_data,"%02X\n",mon[i][j]&0xFF);/////////////////////////////////check FF
 			}
 		}
 		//close 

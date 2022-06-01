@@ -193,7 +193,7 @@ void shutdownmethods(char* argv[], unsigned long long cycles)
 {
 	CyclesLog(cycles, argv[CYCLES]);
 	logdrivetofile(argv[DISKOUT]);
-	writeLogMon(argv[MONITOR], argv[MONITOR_YUV]);
+	writeLogMon(argv[MONITOR_YUV], argv[MONITOR]);
 	logmemout(rammemory,argv[MEMOUT]);
 	logregout(registers, argv[REGOUT]);
 	//////////remember to open and close file add file pointers!!!!!!!!!11!!!!!!!!!!@#$%^&
@@ -268,20 +268,20 @@ void irqhandler(int pc, int *cycles)
 	}
 }
 //////////check if redundant!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-void outputdisc(char* outputfile) 
-{
-	// write disc data to file
-	int i = 0;int j = 0;
-	FILE* f = fopen(outputfile, "w+");
-	for (int i = 0; i < SECTOR_SIZE; i++)
-	{
-		for (int j = 0; j < SECTOR_COUNT; j++)
-			{
-				fprintf(f,"%05x\n",hardrive[i][j]);/////////////////////////////5 or 2?
-			}
-	}
-	fclose(f);
-}////////////////////////redundant??!!!!!
+//void outputdisc(char* outputfile) 
+//{
+//	// write disc data to file
+//	int i = 0;int j = 0;
+//	FILE* f = fopen(outputfile, "w+");
+//	for (int i = 0; i < SECTOR_SIZE; i++)
+//	{
+//		for (int j = 0; j < SECTOR_COUNT; j++)
+//			{
+//				fprintf(f,"%05x\n",hardrive[i][j]);/////////////////////////////5 or 2?
+//			}
+//	}
+//	fclose(f);
+//}////////////////////////redundant??!!!!!
 void inputdisc(char* inputfile) {
 	// read memory from file into an array 
 	int i = 0;
@@ -292,7 +292,9 @@ void inputdisc(char* inputfile) {
 	while (fgets(buf_array,(MAX_INPUT_LINE-1), f))
 	{
 		buf_array[strcspn(buf_array,"\n")]=0;
-		val = strtoul(buf_array, NULL, 0);
+		touppers(buf_array);
+		
+		val = strtoul(buf_array, NULL, 16);
 		hardrive[i][j] = val;
 		j = ((j+1)%SECTOR_COUNT);
 		if (j == 0)
@@ -301,6 +303,23 @@ void inputdisc(char* inputfile) {
 		}
 	}
 	fclose(f);
+}
+
+void touppers(char *str) 
+{
+	//converts strings to uppercase
+	int i = 0;
+	char c;
+
+	while (str[i]) 
+	{
+		if (isalpha(str[i]))
+		{
+			toupper(str[i]);
+		}
+		i++;
+	}
+
 }
 void logdrivetofile(char* fileName) 
 {

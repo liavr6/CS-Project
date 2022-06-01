@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <ctype.h>
 
 // CL arguments order defenition
 #define IMEMIN 1
@@ -95,7 +96,7 @@ void triggertimer();
 void writeval2mon();
 void set_irq2_arr(char* file_path);
 void check_irq2arr(unsigned long long cycles);
-void outputdisc(char* outputfile);
+//void outputdisc(char* outputfile);
 void inputdisc(char* inputfile);
 void logdrivetofile(char* fileName);
 int hdmanager(int rammemory[], int diskcyc);
@@ -103,3 +104,4 @@ void logmemout(int data[], char* fileName);
 int lastindexinmem(int memory[]);
 void logregout(int hwreg[], char* fileName);
 void sevensegmenttoLog(int *cycles, char *filename);
+void touppers(char *str);
