@@ -2,7 +2,7 @@
 
 #include "Main.h"
 #include "monitor.h"
-
+#include "simulator_new.h" 
 
 int interuptflag = 0;
 int hardrive[SECTOR_COUNT][SECTOR_SIZE] = { 0 };
@@ -36,7 +36,9 @@ int main(int argc, char *argv[])
 	}
 	// initialize components
 
-	int pc = 0; 
+	int* pc;
+	pc = (int*)malloc(sizeof(int));
+	*pc = 0;
 	int irqstat = 0;
 	int* cycles;
 	cycles = (int*)malloc(sizeof(int));
@@ -48,33 +50,478 @@ int main(int argc, char *argv[])
 	//unsigned int hwreg[IOREGS] = { 0 };//////////////////////////////////////////////
 
 
+
+
 	unsigned int oldsegval = 0;
 	unsigned int oldledstate = 0;
 
 
-		//main work loop
-		do
+	//void recognize_opcode(char* file_name, int* ioregisters, int* registers, int* MEM, int* pc, int inetrruptflag)
+	//{
+	//	FILE* fp1;
+	//	char line[100];
+	//	char** lines = malloc(sizeof(char*) * (1));
+	//	fp1 = fopen(file_name, "r");
+	//	if (fp1 == NULL)
+	//	{
+	//		printf("Error opening file\n");
+	//		return;
+	//	}
+	//	while (fgets(line, 100, fp1) != NULL) // creating an array of the lines of memin.txt
+	//	{
+	//		char* temp = malloc(sizeof(char*) * (100));
+	//		strcpy(temp, line);
+	//		lines = (char**)realloc(lines, (sizeof(char*) * (*pc + 1)));
+	//		lines[*pc] = temp;
+	//		*pc += 1;
+	//	}
+	//	*pc = 0;
+	//	while (*pc != -1)
+	//	{
+	//		int op_num, rd, rs, rt;
+	//		char operation[4];
+	//		strncpy(operation, lines[*pc], 2);
+	//		operation[2] = '\n';
+	//		operation[3] = '\0';
+	//		op_num = string_in_hex_to_int(operation);
+	//		rd = char_in_hex_to_int(lines[*pc][2]);
+	//		rs = char_in_hex_to_int(lines[*pc][3]);
+	//		rt = char_in_hex_to_int(lines[*pc][4]);
+	//		if (op_num == 21) // opcode is halt
+	//		{
+	//			*pc = -1;
+	//			break;
+	//		}
+	//		if ((op_num >= 0 && op_num <= 8) || (op_num == 16) || (op_num == 19))
+	//		{
+	//			if (rd == 0 || rd == 1) // R[rd] is $zero or $imm and it can't be rewritten
+	//			{
+	//				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+	//				{
+	//					// we still need to read the next line ($imm value)
+	//					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+	//					*pc += 2;
+	//				}
+	//				else // R[rs] and R[rt] aren't $imm, so the instruction is in R-format
+	//				{
+	//					*pc += 1;
+	//				}
+	//				continue; // $zero or $imm can't be rewritten, so we go to the next iteration
+	//			}
+	//			else // R[rd] is not $zero nor $imm
+	//			{
+	//				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+	//				{
+	//					// we still need to read the next line ($imm value)
+	//					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]); // put const value in $imm
+	//					*pc += 2;
+	//				}
+	//				else // R[rs] and R[rt] aren't $imm, so the instruction is in R-format
+	//				{
+	//					*pc += 1;
+	//				}
+	//			}
+	//			switch (op_num)
+	//			{
+	//			case 0:
+	//				printf("the opcode is add\n");
+	//				add(registers, rd, rs, rt);
+	//				break;
+	//			case 1:
+	//				printf("the opcode is sub\n");
+	//				sub(registers, rd, rs, rt);
+	//				break;
+	//			case 2:
+	//				printf("the opcode is mul\n");
+	//				mul(registers, rd, rs, rt);
+	//				break;
+	//			case 3:
+	//				printf("the opcode is and\n");
+	//				andn(registers, rd, rs, rt);
+	//				break;
+	//			case 4:
+	//				printf("the opcode is or\n");
+	//				orn(registers, rd, rs, rt);
+	//				break;
+	//			case 5:
+	//				printf("the opcode is xor\n");
+	//				xorn(registers, rd, rs, rt);
+	//				break;
+	//			case 6:
+	//				printf("the opcode is sll\n");
+	//				sll(registers, rd, rs, rt);
+	//				break;
+	//			case 7:
+	//				printf("the opcode is sra\n");
+	//				sra(registers, rd, rs, rt);
+	//				break;
+	//			case 8:
+	//				printf("the opcode is srl\n");
+	//				srl(registers, rd, rs, rt);
+	//				break;
+	//			case 16:
+	//				printf("the opcode is lw\n");
+	//				lw(registers, MEM, rd, rs, rs, *pc);
+	//				break;
+	//			case 19:
+	//				printf("the opcode is in\n");
+	//				in(registers, ioregisters, rd, rs, rt);
+	//				break;
+	//			default:
+	//				break;
+	//			}
+	//		}
+	//		if (op_num == 15) // opcode is jal
+	//		{
+	//			if (rd == 0)
+	//			{
+	//				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+	//				{
+	//					// we still need to read the next line ($imm value)
+	//					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+	//					*pc += 1; // the instruction is in I-format, so it's 2 lines long
+	//				}
+	//				// rd is $zero so it can't be rewritten, so the jal will perform only athe jump
+	//				*pc = registers[rs]; // jump execution
+	//			}
+	//			if (rd == 1)
+	//			{
+	//				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+	//				{
+	//					// we still need to read the next line ($imm value)
+	//					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+	//					*pc += 1; // the instruction is in I-format, so it's 2 lines long
+	//				}
+	//				// rd is $zero so it can't be rewritten, so the jal will perform only athe jump
+	//				*pc = registers[rs]; // jump execution
+	//			}
+	//			else
+	//			{
+	//				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+	//				{
+	//					// we still need to read the next line ($imm value)
+	//					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+	//					*pc += 1; // the instruction is in I-format, so it's 2 lines long
+	//				}
+	//				jal(registers, rd, rs, rt, pc);
+	//				continue;
+	//			}
+	//		}
+	//		if (op_num >= 9 && op_num <= 14)
+	//		{
+	//			if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+	//			{
+	//				// we still need to read the next line ($imm value)
+	//				registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+	//			}
+	//			switch (op_num)
+	//			{
+	//			case 9:
+	//				printf("the opcode is beq\n");
+	//				beq(registers, rd, rs, rt, pc);
+	//				break;
+	//			case 10:
+	//				printf("the opcode is bne\n");
+	//				bne(registers, rd, rs, rt, pc);
+	//				break;
+	//			case 11:
+	//				printf("the opcode is blt\n");
+	//				blt(registers, rd, rs, rt, pc);
+	//				break;
+	//			case 12:
+	//				printf("the opcode is bgt\n");
+	//				bgt(registers, rd, rs, rt, pc);
+	//				break;
+	//			case 13:
+	//				printf("the opcode is ble\n");
+	//				ble(registers, rd, rs, rt, pc);
+	//				break;
+	//			case 14:
+	//				printf("the opcode is bge\n");
+	//				bge(registers, rd, rs, rt, pc);
+	//				break;
+	//			default:
+	//				break;
+	//			}
+	//		}
+	//		if (op_num == 17 || op_num == 18 || op_num == 20)
+	//		{
+	//			if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+	//			{
+	//				// we still need to read the next line ($imm value)
+	//				registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+	//				*pc += 1;
+	//			}
+	//			*pc += 1;
+	//			switch (op_num)
+	//			{
+	//			case 17:
+	//				printf("the opcode is sw\n");
+	//				sw(registers, MEM, rd, rs, rt);
+	//				break;
+	//			case 18:
+	//				printf("the opcode is reti\n");
+	//				reti(registers, ioregisters, rd, rs, rt, pc);
+	//				break;
+	//			case 20:
+	//				printf("the opcode is out\n");
+	//				out(registers, ioregisters, rd, rs, rt);
+	//				break;
+	//			default:
+	//				break;
+	//			}
+	//		}
+	//	}
+	//}
+	FILE* fp1;
+	char line[100];
+	char** lines = malloc(sizeof(char*) * (1));
+	fp1 = fopen(argv[IMEMIN], "r");
+	if (fp1 == NULL)
+	{
+		printf("Error opening file\n");
+		return;
+	}
+	while (fgets(line, 100, fp1) != NULL) // creating an array of the lines of memin.txt
+	{
+		char* temp = malloc(sizeof(char*) * (100));
+		strcpy(temp, line);
+		lines = (char**)realloc(lines, (sizeof(char*) * (*pc + 1)));
+		lines[*pc] = temp;
+		*pc += 1;
+	}
+	*pc = 0;
+	while (*pc != -1)
+	{
+		int op_num, rd, rs, rt;
+		char operation[4];
+		strncpy(operation, lines[*pc], 2);
+		operation[2] = '\n';
+		operation[3] = '\0';
+		op_num = string_in_hex_to_int(operation);
+		rd = char_in_hex_to_int(lines[*pc][2]);
+		rs = char_in_hex_to_int(lines[*pc][3]);
+		rt = char_in_hex_to_int(lines[*pc][4]);
+		if (op_num == 21) // opcode is halt
 		{
-			// check irq
-			irqhandler(&pc, cycles);//complete!!!!!!!!!!!!!!!!!!!
-			diskcyc = hdmanager(rammemory, diskcyc);
-
-			//////////////switch comes here!!!!//////////
-
-			updatecyc("R", "sw", cycles);//update cycles count
+			*pc = -1;
+			break;
+		}
+		if ((op_num >= 0 && op_num <= 8) || (op_num == 16) || (op_num == 19))
+		{
+			if (rd == 0 || rd == 1) // R[rd] is $zero or $imm and it can't be rewritten
+			{
+				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+				{
+					// we still need to read the next line ($imm value)
+					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+					*pc += 2;
+				}
+				else // R[rs] and R[rt] aren't $imm, so the instruction is in R-format
+				{
+					*pc += 1;
+				}
+				continue; // $zero or $imm can't be rewritten, so we go to the next iteration
+			}
+			else // R[rd] is not $zero nor $imm
+			{
+				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+				{
+					// we still need to read the next line ($imm value)
+					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]); // put const value in $imm
+					*pc += 2;
+				}
+				else // R[rs] and R[rt] aren't $imm, so the instruction is in R-format
+				{
+					*pc += 1;
+				}
+			}
+			switch (op_num)
+			{
+			case 0:
+				printf("the opcode is add\n");
+				add(registers, rd, rs, rt);
+				break;
+			case 1:
+				printf("the opcode is sub\n");
+				sub(registers, rd, rs, rt);
+				break;
+			case 2:
+				printf("the opcode is mul\n");
+				mul(registers, rd, rs, rt);
+				break;
+			case 3:
+				printf("the opcode is and\n");
+				andn(registers, rd, rs, rt);
+				break;
+			case 4:
+				printf("the opcode is or\n");
+				orn(registers, rd, rs, rt);
+				break;
+			case 5:
+				printf("the opcode is xor\n");
+				xorn(registers, rd, rs, rt);
+				break;
+			case 6:
+				printf("the opcode is sll\n");
+				sll(registers, rd, rs, rt);
+				break;
+			case 7:
+				printf("the opcode is sra\n");
+				sra(registers, rd, rs, rt);
+				break;
+			case 8:
+				printf("the opcode is srl\n");
+				srl(registers, rd, rs, rt);
+				break;
+			case 16:
+				printf("the opcode is lw\n");
+				lw(registers, rammemory, rd, rs, rs, *pc);
+				break;
+			case 19:
+				printf("the opcode is in\n");
+				in(registers, ioregisters, rd, rs, rt);
+				break;
+			default:
+				break;
+			}
+		}
+		if (op_num == 15) // opcode is jal
+		{
+			if (rd == 0)
+			{
+				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+				{
+					// we still need to read the next line ($imm value)
+					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+					*pc += 1; // the instruction is in I-format, so it's 2 lines long
+				}
+				// rd is $zero so it can't be rewritten, so the jal will perform only athe jump
+				*pc = registers[rs]; // jump execution
+			}
+			if (rd == 1)
+			{
+				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+				{
+					// we still need to read the next line ($imm value)
+					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+					*pc += 1; // the instruction is in I-format, so it's 2 lines long
+				}
+				// rd is $zero so it can't be rewritten, so the jal will perform only athe jump
+				*pc = registers[rs]; // jump execution
+			}
+			else
+			{
+				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+				{
+					// we still need to read the next line ($imm value)
+					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+					*pc += 1; // the instruction is in I-format, so it's 2 lines long
+				}
+				jal(registers, rd, rs, rt, pc);
+				continue;
+			}
+		}
+		if (op_num >= 9 && op_num <= 14)
+		{
+			if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+			{
+				// we still need to read the next line ($imm value)
+				registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+			}
+			switch (op_num)
+			{
+			case 9:
+				printf("the opcode is beq\n");
+				beq(registers, rd, rs, rt, pc);
+				break;
+			case 10:
+				printf("the opcode is bne\n");
+				bne(registers, rd, rs, rt, pc);
+				break;
+			case 11:
+				printf("the opcode is blt\n");
+				blt(registers, rd, rs, rt, pc);
+				break;
+			case 12:
+				printf("the opcode is bgt\n");
+				bgt(registers, rd, rs, rt, pc);
+				break;
+			case 13:
+				printf("the opcode is ble\n");
+				ble(registers, rd, rs, rt, pc);
+				break;
+			case 14:
+				printf("the opcode is bge\n");
+				bge(registers, rd, rs, rt, pc);
+				break;
+			default:
+				break;
+			}
+		}
+		if (op_num == 17 || op_num == 18 || op_num == 20)
+		{
+			if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+			{
+				// we still need to read the next line ($imm value)
+				registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
+				*pc += 1;
+			}
+			*pc += 1;
+			switch (op_num)
+			{
+			case 17:
+				printf("the opcode is sw\n");
+				sw(registers, rammemory, rd, rs, rt);
+				break;
+			case 18:
+				printf("the opcode is reti\n");
+				reti(registers, ioregisters, rd, rs, rt, pc);
+				break;
+			case 20:
+				printf("the opcode is out\n");
+				out(registers, ioregisters, rd, rs, rt);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	updatecyc("R", "sw", cycles);//update cycles count
 			triggertimer();
 
 			// Logs and end of process stage
 			LedLog(cycles, argv[LEDS]);
-			sevensegmenttoLog(cycles,argv[DISPLAY7SEG]);
+			sevensegmenttoLog(cycles, argv[DISPLAY7SEG]);
 			triggermon();
 
-
-			pc = -1;
-		} while (pc != -1);
-
+		
 		shutdownmethods(argv, cycles);
-}	
+}
+		
+		//main work loop
+		//do
+		//{
+		//	// check irq
+		//	irqhandler(&pc, cycles);//complete!!!!!!!!!!!!!!!!!!!
+		//	diskcyc = hdmanager(rammemory, diskcyc);
+
+		//	//////////////switch comes here!!!!//////////
+
+		//	updatecyc("R", "sw", cycles);//update cycles count
+		//	triggertimer();
+
+		//	// Logs and end of process stage
+		//	LedLog(cycles, argv[LEDS]);
+		//	sevensegmenttoLog(cycles,argv[DISPLAY7SEG]);
+		//	triggermon();
+
+
+		//	pc = -1;
+		//} while (pc != -1);
+
+		//shutdownmethods(argv, cycles);
+
 
 
 //function to read input files

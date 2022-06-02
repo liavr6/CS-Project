@@ -90,7 +90,7 @@ void updatecyc(char type, char* cmd, int* cycles);
 void LedLog(int *cycles, char *filename);
 void triggermon();
 void irqhandler(int pc, int *cycles);
-void shutdownmethods(char* argv[], unsigned long long cycles);
+void shutdownmethods(char* argv[], int* cycles);
 void CyclesLog(int *cycles, char *filename);
 void triggertimer();
 void writeval2mon();
