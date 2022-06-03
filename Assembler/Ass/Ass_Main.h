@@ -24,3 +24,5 @@ void free_array(label** labels, int labelnum);
 char* substr(const char *src, int strt, int end);
 char* tohex(int num);
 int is_lbl_in_array(label** labels, char* str, int length);
+char* cleanhex(char* num);
+void touppers(char *str);

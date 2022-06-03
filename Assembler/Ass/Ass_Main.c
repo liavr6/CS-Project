@@ -4,6 +4,7 @@
 #include "Ass_Main.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 label* create_label()
 {
@@ -394,9 +395,11 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 						write_file(fp2, memin_line);//added writing to file - check if can avoid opening file over and over
 					}
 					writtenlines++;
+					char *ret;
+					ret = strstr(splited_line[size - 1], "0x");
 					for (int ind = 0; ind < strlen(splited_line[size - 1]); ind++)
 					{
-						if (isalpha(splited_line[size - 1][ind]))//////add part to test if there is a minus sign
+						if (isalpha(splited_line[size - 1][ind])&&!ret)//////add part to test if there is a minus sign
 						{
 							alpha = true;
 							break;
@@ -404,7 +407,15 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 					}
 					if (!alpha)
 					{
-						imm = tohex(atoi(splited_line[size - 1]));;//check for mem leak!!!!
+						/*if (strstr(splited_line[size - 1], "0x"))*/
+						if (ret)
+						{
+							imm = cleanhex(splited_line[size - 1]);
+						}
+						else
+						{
+							imm = tohex(atoi(splited_line[size - 1]));;//check for mem leak!!!!
+						}
 						//sprintf(str, "%05d", atoi(splited_line[size]));
 						for (int i = 0; i < size; i++)
 						{
@@ -616,5 +627,42 @@ void free_array(label** labels, int labelnum)
 		free(labels[i]);
 	}
 	free(labels);
+}
+
+
+char* cleanhex(char* num)
+{
+	int targetStrLen = 5;           // Target output length  
+	const char *padding = "00000";
+	
+	//static char cleanhexVal[6];
+	size_t n = sizeof(num) / sizeof(num[0]);
+	char *finalhexVal = (char*)malloc(sizeof(char) * (6));
+	char cleanhexVal[8];
+	memcpy(cleanhexVal, &num[2], n - 1);
+	touppers(cleanhexVal);
+	int padLen = targetStrLen - strlen(cleanhexVal); //Padding length
+	if (padLen < 0)
+	{
+		padLen = 0;
+	}
+	sprintf(finalhexVal,"%*.*s%s", padLen, padLen, padding, cleanhexVal);  // Left Padding
+	finalhexVal[5] = '\0';
+	return finalhexVal;
+}
+void touppers(char *str)
+{
+	//converts strings to uppercase
+	int i = 0;
+
+	while (str[i])
+	{
+		if (isalpha(str[i]))
+		{
+			str[i] = toupper(str[i]);
+		}
+		i++;
+	}
+
 }
 #pragma endregion

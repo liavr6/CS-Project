@@ -7,7 +7,7 @@
 #include <ctype.h>
 
 // CL arguments order defenition
-#define IMEMIN 1
+#define MEMIN 1
 //#define DMEMIN 2
 #define DISKIN 2
 #define IRQ2IN 3
@@ -23,7 +23,7 @@
 #define MONITOR_YUV 13
 
 // CL arguments chmod
-#define IMEMINC 'r'
+#define MEMINC 'r'
 #define MEMINC 'r'
 #define DISKINC 'r'
 #define IRQ2INC 'r'
@@ -90,7 +90,7 @@ void updatecyc(char type, char* cmd, int* cycles);
 void LedLog(int *cycles, char *filename);
 void triggermon();
 void irqhandler(int pc, int *cycles);
-void shutdownmethods(char* argv[], int* cycles);
+void shutdownmethods(char* argv[], int* cycles, char** lines);
 void CyclesLog(int *cycles, char *filename);
 void triggertimer();
 void writeval2mon();
@@ -105,3 +105,5 @@ int lastindexinmem(int memory[]);
 void logregout(int hwreg[], char* fileName);
 void sevensegmenttoLog(int *cycles, char *filename);
 void touppers(char *str);
+void LogTrace(FILE* file_name, char* inst, int* pc);
+void remove_char(char *str, char target);
