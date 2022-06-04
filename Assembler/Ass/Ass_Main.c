@@ -352,9 +352,25 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 			 //nword = (word*)malloc(sizeof(word));
 				//nword->place = atoi(splited_line[1]);
 				//nword->val = atoi(splited_line[2]);
-
 				fflush(fp2);
-				wordhandle(out_file_name, atoi(splited_line[1]), atoi(splited_line[2]));
+				int left, right;
+				if (strstr(splited_line[1], "0x"))
+				{
+					left = strtol((cleanhex(splited_line[1])), NULL, 16);
+				}
+				else
+				{
+					left = atoi(splited_line[1]);
+				}
+				if (strstr(splited_line[2], "0x"))
+				{
+					right = strtol((cleanhex(splited_line[2])), NULL, 16);
+				}
+				else
+				{
+					right = atoi(splited_line[2]); 
+				}
+				wordhandle(out_file_name, left, right);
 					word++;
 				
 			}
@@ -632,7 +648,7 @@ void free_array(label** labels, int labelnum)
 
 char* cleanhex(char* num)
 {
-	int targetStrLen = 5;           // Target output length  
+	int targetStrLen = 5;           //output length  
 	const char *padding = "00000";
 	
 	//static char cleanhexVal[6];
