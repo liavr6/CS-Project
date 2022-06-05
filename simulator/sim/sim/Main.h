@@ -71,7 +71,7 @@
 #define SECTOR_SIZE	5		
 #define SECTOR_COUNT 128
 unsigned int oldsegval = 0;
-unsigned int oldledstate = 0;
+//unsigned int oldledstate = 0;
 int irqstat = 0;
 
 //int ioregisters[IOREGS] = { 0 };
@@ -89,7 +89,7 @@ char* substr(const char *src, int strt, int end);
 void updatecyc(char type, char* cmd, int* cycles);
 void LedLog(int *cycles, char *filename);
 void triggermon();
-void irqhandler(int pc, int *cycles);
+void irqhandler(int* pc, int *cycles);
 void shutdownmethods(char* argv[], int* cycles, char** lines);
 void CyclesLog(int *cycles, char *filename);
 void triggertimer();
@@ -107,3 +107,5 @@ void sevensegmenttoLog(int *cycles, char *filename);
 void touppers(char *str);
 void LogTrace(FILE* file_name, char* inst, int* pc);
 void remove_char(char *str, char target);
+void reti(int* registers, int* IORegister, int rd, int rs, int rt, int* pc);
+const char* ioregname(int num);

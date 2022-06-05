@@ -12,7 +12,8 @@ int ioregisters[IOREGS] = { 0 };
 int* irq2arr;
 int irq2arrlen;
 FILE* fptrace;
-
+int oldledstate = 0;
+FILE* hwfile;
 int main(int argc, char *argv[])
 {
 	argc = 14;
@@ -36,6 +37,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	// initialize components
+	hwfile = fopen(argv[HWREGTRACE], "w");
 
 	int* pc;
 	pc = (int*)malloc(sizeof(int));
@@ -54,7 +56,6 @@ int main(int argc, char *argv[])
 
 
 	unsigned int oldsegval = 0;
-	unsigned int oldledstate = 0;
 
 
 	FILE* fp1;
@@ -87,20 +88,32 @@ int main(int argc, char *argv[])
 	*pc = 0;
 	while (*pc != -1)
 	{
+
+		registers[1] = 0;
 		int op_num, rd, rs, rt;
 		char operation[4];
 		strncpy(operation, lines[*pc], 2);
 		operation[2] = '\n';
 		operation[3] = '\0';
-
+		char typec='I';
+		char wflag[2]="";
 		op_num = string_in_hex_to_int(operation);
 		rd = char_in_hex_to_int(lines[*pc][2]);
 		rs = char_in_hex_to_int(lines[*pc][3]);
 		rt = char_in_hex_to_int(lines[*pc][4]);
+		//if (*pc == 59)
+		//{
+		//	printf("g");
+		//}
 		if (op_num == 21) // opcode is halt
 		{
+			LogTrace(fptrace, lines[*pc], pc);
 			*pc = -1;
 			break;
+		}
+		if (*pc == 23)
+		{
+			printf("a");
 		}
 		if ((op_num >= 0 && op_num <= 8) || (op_num == 16) || (op_num == 19))
 		{
@@ -108,13 +121,21 @@ int main(int argc, char *argv[])
 			{
 				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
 				{
+
 					// we still need to read the next line ($imm value)
 					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
 					LogTrace(fptrace, lines[*pc], pc);
 					*pc += 2;
+					*cycles += 1;
+					irqhandler(pc, cycles);
+					*cycles += 1;
+					irqhandler(pc, cycles);
 				}
 				else // R[rs] and R[rt] aren't $imm, so the instruction is in R-format
 				{
+					*cycles += 1;
+					//registers[1] = 0;
+					irqhandler(pc, cycles);
 					LogTrace(fptrace, lines[*pc], pc);
 					*pc += 1;
 				}
@@ -125,12 +146,21 @@ int main(int argc, char *argv[])
 				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
 				{
 					// we still need to read the next line ($imm value)
+
+					//irqhandler(pc, cycles);
 					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]); // put const value in $imm
 					LogTrace(fptrace, lines[*pc], pc);
 					*pc += 2;
+					*cycles += 1;
+					irqhandler(pc, cycles);
+					*cycles += 1;
+					irqhandler(pc, cycles);
 				}
 				else // R[rs] and R[rt] aren't $imm, so the instruction is in R-format
 				{
+					*cycles += 1;
+					//registers[1] = 0;
+					irqhandler(pc, cycles);
 					LogTrace(fptrace, lines[*pc], pc);
 					*pc += 1;
 				}
@@ -175,11 +205,14 @@ int main(int argc, char *argv[])
 				break;
 			case 16:
 				printf("the opcode is lw\n");
+				*cycles += 1;
+				irqhandler(pc, cycles);
 				lw(registers, rammemory, rd, rs, rt);
 				break;
 			case 19:
 				printf("the opcode is in\n");
 				in(registers, ioregisters, rd, rs, rt);
+				fprintf(hwfile, "%d READ %s %08X\n", *cycles, ioregname(registers[rs] + registers[rt]), registers[rd]);
 				break;
 			default:
 				break;
@@ -192,12 +225,20 @@ int main(int argc, char *argv[])
 				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
 				{
 					// we still need to read the next line ($imm value)
+
 					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
 					LogTrace(fptrace, lines[*pc], pc);
 					*pc += 1; // the instruction is in I-format, so it's 2 lines long
+					*cycles += 1;
+					irqhandler(pc, cycles);
+					*cycles += 1;
+					irqhandler(pc, cycles);
 				}
 				else
 				{
+					*cycles += 1;
+					irqhandler(pc, cycles);
+					//registers[1] = 0;
 					LogTrace(fptrace, lines[*pc], pc);
 				}
 				// rd is $zero so it can't be rewritten, so the jal will perform only athe jump
@@ -208,11 +249,19 @@ int main(int argc, char *argv[])
 				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
 				{
 					// we still need to read the next line ($imm value)
+
 					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
 					LogTrace(fptrace, lines[*pc], pc);
-					*pc += 1; // the instruction is in I-format, so it's 2 lines long
+					*pc += 2; // the instruction is in I-format, so it's 2 lines long
+					*cycles += 1;
+					irqhandler(pc, cycles);
+					*cycles += 1;
+					irqhandler(pc, cycles);
 				}
-				else{ LogTrace(fptrace, lines[*pc], pc); }
+				else{ 
+					LogTrace(fptrace, lines[*pc], pc); 
+				//registers[1] = 0;
+				}
 				// rd is $zero so it can't be rewritten, so the jal will perform only athe jump
 				*pc = registers[rs]; // jump execution
 			}
@@ -221,25 +270,38 @@ int main(int argc, char *argv[])
 				if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
 				{
 					// we still need to read the next line ($imm value)
+
 					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
 					LogTrace(fptrace, lines[*pc], pc);
 					*pc += 1; // the instruction is in I-format, so it's 2 lines long
+					*cycles += 1;
+					irqhandler(pc, cycles);
+					*cycles += 1;
+					irqhandler(pc, cycles);
 				}
-				else{ LogTrace(fptrace, lines[*pc], pc); }
+				else{ LogTrace(fptrace, lines[*pc], pc); //registers[1] = 0;
+				}
 				jal(registers, rd, rs, rt, pc);
 				continue;
 			}
 		}
 		if (op_num >= 9 && op_num <= 14)
 		{
-			if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
+
+			if (rs == 1 || rt == 1|| rd == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
 			{
 				// we still need to read the next line ($imm value)
+
 				registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
 				LogTrace(fptrace, lines[*pc], pc);
 				*pc += 1;
+				*cycles += 1;
+				irqhandler(pc, cycles);
+				*cycles += 1;
+				irqhandler(pc, cycles);
 			}
-			else{ LogTrace(fptrace, lines[*pc], pc); }
+			else{ LogTrace(fptrace, lines[*pc], pc); //registers[1] = 0;
+			}
 			*pc += 1;
 			switch (op_num)
 			{
@@ -273,70 +335,61 @@ int main(int argc, char *argv[])
 		}
 		if (op_num == 17 || op_num == 18 || op_num == 20)
 		{
+			//if (rd == 0)
+			//{
+			//	*cycles += 1;
+			//	irqhandler(pc, cycles);
+			//}
 			if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
 			{
 				// we still need to read the next line ($imm value)
+
 				registers[1] = string_in_hex_to_int(lines[(*pc) + 1]);// put const value in $imm
 				LogTrace(fptrace, lines[*pc], pc);
 				*pc += 1;
+				*cycles += 1;
+				irqhandler(pc, cycles);
+				*cycles += 1;
+				irqhandler(pc, cycles);
 			}
-			else{ LogTrace(fptrace, lines[*pc], pc); }
+			else{ LogTrace(fptrace, lines[*pc], pc); 
+			}
 			*pc += 1;
 			switch (op_num)
 			{
 			case 17:
 				printf("the opcode is sw\n");
+				*cycles += 1;
+				irqhandler(pc, cycles);
 				sw(registers, rammemory, rd, rs, rt);
 				break;
 			case 18:
 				printf("the opcode is reti\n");
+				//registers[1] = 0;
 				reti(registers, ioregisters, rd, rs, rt, pc);
 				break;
 			case 20:
 				printf("the opcode is out\n");
 				out(registers, ioregisters, rd, rs, rt);
+				fprintf(hwfile, "%d WRITE %s %08X\n", *cycles, ioregname(registers[rs] + registers[rt]), registers[rd]);
 				break;
 			default:
 				break;
 			}
 		}
+
+		irqhandler(pc, cycles);
+		// Logs and end of process stage
+		LedLog(cycles, argv[LEDS]);
+		sevensegmenttoLog(cycles, argv[DISPLAY7SEG]);
+		triggermon();
+
 	}
-	updatecyc("R", "sw", cycles);//update cycles count
-			triggertimer();
-
-			// Logs and end of process stage
-			LedLog(cycles, argv[LEDS]);
-			sevensegmenttoLog(cycles, argv[DISPLAY7SEG]);
-			triggermon();
-
-		
+	
 		shutdownmethods(argv, cycles,lines);
 }
 		
-		//main work loop
-		//do
-		//{
-		//	// check irq
-		//	irqhandler(&pc, cycles);//complete!!!!!!!!!!!!!!!!!!!
-		//	diskcyc = hdmanager(rammemory, diskcyc);
-
-		//	//////////////switch comes here!!!!//////////
-
-		//	updatecyc("R", "sw", cycles);//update cycles count
-		//	triggertimer();
-
-		//	// Logs and end of process stage
-		//	LedLog(cycles, argv[LEDS]);
-		//	sevensegmenttoLog(cycles,argv[DISPLAY7SEG]);
-		//	triggermon();
-
-
-		//	pc = -1;
-		//} while (pc != -1);
-
-		//shutdownmethods(argv, cycles);
-
-
+	
 
 //function to read input files
 FILE* read_file(char filename[], char chmod)
@@ -373,25 +426,24 @@ char* substr(const char *src, int strt, int end)
 }
 void updatecyc(char type, char* cmd, int* cycles)
 {
-	if (type == "R")
+	if (type == 'R')
 	{
 		*cycles += 1;
 	}
-	if (type == "I")
+	if (type == 'I')
 	{
 		*cycles += 2;
 	}
-	if (cmd == "lw" || cmd == "sw")
+	if (strcpy(cmd,"lw")==0 || strcpy(cmd, "sw") == 0)
 	{
 		*cycles += 1;
 	}
 }
 void LedLog(int *cycles, char *filename)
 {
-	//unsigned int curledstate = ioregisters[9];///////////check if works
-	if (ioregisters[LEDS] != oldsegval)
+	if (ioregisters[LEDS] != oldledstate)
 	{
-		char* line = (char*)malloc(sizeof(char) * 500);///////change 500?!!!!!!
+		char* line = (char*)malloc(sizeof(char) * 500);
 		if (line == NULL) {
 			exit(1);
 		}
@@ -420,10 +472,11 @@ void sevensegmenttoLog(int *cycles, char *filename)
 	unsigned int cursegval = ioregisters[DISPLAY7SEG];
 	if (cursegval != oldsegval)
 	{
-		char* line = (char*)malloc(sizeof(char) * 500);///////change 500?!!!!!!
+		char* line = (char*)malloc(sizeof(char) * 500);
 		if (line == NULL) {
 			exit(1);
 		}
+
 		sprintf(line, "%d %08X\n", *cycles, cursegval);
 		write_file(filename, line);
 		oldsegval = cursegval;
@@ -434,8 +487,6 @@ void writeval2mon()
 {
 	unsigned char val = ioregisters[MONITORDATA];
 	unsigned int ofst = ioregisters[MONITORADDR];
-	//int col = ofst%MON_SIZE;
-	//int row = ofst / MON_SIZE;
 
 	changecell(ofst/MON_SIZE, ofst%MON_SIZE, val);
 }
@@ -455,9 +506,10 @@ void shutdownmethods(char* argv[], unsigned long long cycles, char** lines)
 	CyclesLog(cycles, argv[CYCLES]);
 	logdrivetofile(argv[DISKOUT]);
 	writeLogMon(argv[MONITOR_YUV], argv[MONITOR]);
-	logmemout(**lines,argv[MEMOUT]);
+	logmemout(rammemory,argv[MEMOUT]);
 	logregout(registers, argv[REGOUT]);
 	fclose(fptrace);
+	fclose(hwfile);
 	//////////remember to open and close file add file pointers!!!!!!!!!11!!!!!!!!!!@#$%^&
 }
 void triggertimer() 
@@ -499,34 +551,43 @@ void set_irq2_arr(char* file_path)
 	}
 	free(line);
 }
-void check_irq2arr(unsigned long long cycles)
+void check_irq2arr(int *cycles)
 {
-	for (size_t i = 0; i < irq2arrlen; i++)
+	for (int i = 0; i < irq2arrlen; i++)
 	{
-		if (irq2arr[i] == cycles)
+		//if (*cycles < 102 && *cycles>100)
+		//{
+		//	char a = 'c';
+		//}
+		//if (*cycles<205&&*cycles>195)
+		//{
+		//	char a = 'c';
+		//}
+		if (irq2arr[i] == *cycles)
 		{
 			ioregisters[IRQ2STS] = 1;
 			break;
 		}
 	}
 }
-void irqhandler(int pc, int *cycles)
+void irqhandler(int* pc, int *cycles)
 {
 ///////////////////////////////////////////remember to add to retri!!!!*****************
 	if (interuptflag == 1)
 	{
 		return;
 	}
-	triggertimer();
+
 	check_irq2arr(cycles);
+	triggertimer();
+	
 	//updating interuption station
-	irqstat = ((ioregisters[0] & ioregisters[3]) | (ioregisters[1] & ioregisters[4]) | (ioregisters[2] & ioregisters[5]));
+	irqstat = ((ioregisters[0] && ioregisters[3]) || (ioregisters[1] && ioregisters[4]) || (ioregisters[2] && ioregisters[IRQ2STS]));
 	if (irqstat==1)////check one!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	{
 		interuptflag = 1;
-		ioregisters[IRQRETURN] = pc;
-		pc = 0xFFF&ioregisters[IRQHANDLER]; //12 bits so we don't overflow
-		////////////////////////////////////////////////////////////////////////////////check FFF!!!!!!!!!!!!
+		ioregisters[IRQRETURN] = *pc;
+		*pc = 0xFFF&ioregisters[IRQHANDLER]; //12 bits so we don't overflow
 	}
 }
 //////////check if redundant!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -681,6 +742,7 @@ void LogTrace(FILE* file_name, char* inst, int* pc)
 {
 	fprintf(file_name, "%03X ", *pc);
 	remove_char(inst, '\n');
+
 	fprintf(file_name, "%s", inst);
 	for (int i = 0; i < REGS; i++)
 	{
@@ -702,4 +764,42 @@ void remove_char(char *str, char target)
 		}
 	}
 	*dst = '\0';
+}
+
+void reti(int* registers, int* IORegister, int rd, int rs, int rt, int* pc)
+{
+	*pc = IORegister[7];
+	interuptflag = 0;
+}
+
+//ioregister num return name
+const char* ioregname(int num)
+{
+	switch (num)
+	{
+	case 0:	return "irq0enable";
+	case 1:	return "irq1enable";
+	case 2: return "irq2enable";
+	case 3: return "irq0status";
+	case 4: return "irq1status";
+	case 5: return "irq2status";
+	case 6: return "irqhandler";
+	case 7: return "irqreturn";
+	case 8: return "clks";
+	case 9: return "leds";
+	case 10: return "display7seg";
+	case 11: return "timerenable";
+	case 12: return "timercurrent";
+	case 13: return "timermax";
+	case 14: return "diskcmd";
+	case 15: return "disksector";
+	case 16: return "diskbuffer";
+	case 17: return "diskstatus";
+	case 18: return "reserved";
+	case 19: return "reserved";
+	case 20: return "monitoraddr";
+	case 21: return "monitordata";
+	case 22: return "monitorcmd";
+	default: return "error";
+	}
 }
