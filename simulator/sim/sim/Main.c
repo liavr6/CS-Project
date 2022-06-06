@@ -5,13 +5,16 @@
 #include "simulator_new.h" 
 
 int interuptflag = 0;
-int hardrive[SECTOR_COUNT][SECTOR_SIZE] = { 0 };
+int hardrive[SECTORS*SECTORS][SECTOR_SIZE] = { 0 };
 int rammemory[LINES_MAX_SIZE] = { 0 };
 int registers[REGS] = { 0 };
 int ioregisters[IOREGS] = { 0 };
 int* irq2arr;
 int irq2arrlen;
 FILE* fptrace;
+FILE* ledlog;
+FILE* sevenseg;
+
 int oldledstate = 0;
 FILE* hwfile;
 int main(int argc, char *argv[])
@@ -46,11 +49,13 @@ int main(int argc, char *argv[])
 	int* cycles;
 	cycles = (int*)malloc(sizeof(int));
 	*cycles = 0;
-	int diskcyc = 0;
 	
+	int* diskcyc;
+	diskcyc = (int*)malloc(sizeof(int));
+	*diskcyc = 0;
 	inputdisc(argv[DISKIN]);//read data from harddrive
 	set_irq2_arr(argv[IRQ2IN]);
-	//unsigned int hwreg[IOREGS] = { 0 };//////////////////////////////////////////////
+	
 
 
 
@@ -71,6 +76,18 @@ int main(int argc, char *argv[])
 	if (fptrace == NULL)
 	{
 		printf("Error opening trace file\n");
+		return;
+	}
+	ledlog = fopen(argv[LEDS], "w");
+	if (ledlog == NULL)
+	{
+		printf("Error opening led file\n");
+		return;
+	}
+	sevenseg = fopen(argv[DISPLAY7SEG], "w");
+	if (sevenseg == NULL)
+	{
+		printf("Error opening sevensegment file\n");
 		return;
 	}
 	while (fgets(line, 100, fp1) != NULL) // creating an array of the lines of memin.txt
@@ -95,26 +112,19 @@ int main(int argc, char *argv[])
 		strncpy(operation, lines[*pc], 2);
 		operation[2] = '\n';
 		operation[3] = '\0';
-		char typec='I';
-		char wflag[2]="";
+ 
 		op_num = string_in_hex_to_int(operation);
 		rd = char_in_hex_to_int(lines[*pc][2]);
 		rs = char_in_hex_to_int(lines[*pc][3]);
 		rt = char_in_hex_to_int(lines[*pc][4]);
-		//if (*pc == 59)
-		//{
-		//	printf("g");
-		//}
+ 
 		if (op_num == 21) // opcode is halt
 		{
 			LogTrace(fptrace, lines[*pc], pc);
 			*pc = -1;
 			break;
 		}
-		if (*pc == 23)
-		{
-			printf("a");
-		}
+
 		if ((op_num >= 0 && op_num <= 8) || (op_num == 16) || (op_num == 19))
 		{
 			if (rd == 0 || rd == 1) // R[rd] is $zero or $imm and it can't be rewritten
@@ -134,7 +144,7 @@ int main(int argc, char *argv[])
 				else // R[rs] and R[rt] aren't $imm, so the instruction is in R-format
 				{
 					*cycles += 1;
-					//registers[1] = 0;
+					
 					irqhandler(pc, cycles);
 					LogTrace(fptrace, lines[*pc], pc);
 					*pc += 1;
@@ -147,7 +157,7 @@ int main(int argc, char *argv[])
 				{
 					// we still need to read the next line ($imm value)
 
-					//irqhandler(pc, cycles);
+				
 					registers[1] = string_in_hex_to_int(lines[(*pc) + 1]); // put const value in $imm
 					LogTrace(fptrace, lines[*pc], pc);
 					*pc += 2;
@@ -159,7 +169,7 @@ int main(int argc, char *argv[])
 				else // R[rs] and R[rt] aren't $imm, so the instruction is in R-format
 				{
 					*cycles += 1;
-					//registers[1] = 0;
+					
 					irqhandler(pc, cycles);
 					LogTrace(fptrace, lines[*pc], pc);
 					*pc += 1;
@@ -168,49 +178,49 @@ int main(int argc, char *argv[])
 			switch (op_num)
 			{
 			case 0:
-				printf("the opcode is add\n");
+				
 				add(registers, rd, rs, rt);
 				break;
 			case 1:
-				printf("the opcode is sub\n");
+				
 				sub(registers, rd, rs, rt);
 				break;
 			case 2:
-				printf("the opcode is mul\n");
+				
 				mul(registers, rd, rs, rt);
 				break;
 			case 3:
-				printf("the opcode is and\n");
+				
 				andn(registers, rd, rs, rt);
 				break;
 			case 4:
-				printf("the opcode is or\n");
+				
 				orn(registers, rd, rs, rt);
 				break;
 			case 5:
-				printf("the opcode is xor\n");
+				
 				xorn(registers, rd, rs, rt);
 				break;
 			case 6:
-				printf("the opcode is sll\n");
+				
 				sll(registers, rd, rs, rt);
 				break;
 			case 7:
-				printf("the opcode is sra\n");
+				
 				sra(registers, rd, rs, rt);
 				break;
 			case 8:
-				printf("the opcode is srl\n");
+				
 				srl(registers, rd, rs, rt);
 				break;
 			case 16:
-				printf("the opcode is lw\n");
+				
 				*cycles += 1;
 				irqhandler(pc, cycles);
 				lw(registers, rammemory, rd, rs, rt);
 				break;
 			case 19:
-				printf("the opcode is in\n");
+				
 				in(registers, ioregisters, rd, rs, rt);
 				fprintf(hwfile, "%d READ %s %08X\n", *cycles, ioregname(registers[rs] + registers[rt]), registers[rd]);
 				break;
@@ -238,7 +248,7 @@ int main(int argc, char *argv[])
 				{
 					*cycles += 1;
 					irqhandler(pc, cycles);
-					//registers[1] = 0;
+					
 					LogTrace(fptrace, lines[*pc], pc);
 				}
 				// rd is $zero so it can't be rewritten, so the jal will perform only athe jump
@@ -260,7 +270,7 @@ int main(int argc, char *argv[])
 				}
 				else{ 
 					LogTrace(fptrace, lines[*pc], pc); 
-				//registers[1] = 0;
+				
 				}
 				// rd is $zero so it can't be rewritten, so the jal will perform only athe jump
 				*pc = registers[rs]; // jump execution
@@ -279,7 +289,7 @@ int main(int argc, char *argv[])
 					*cycles += 1;
 					irqhandler(pc, cycles);
 				}
-				else{ LogTrace(fptrace, lines[*pc], pc); //registers[1] = 0;
+				else{ LogTrace(fptrace, lines[*pc], pc); 
 				}
 				jal(registers, rd, rs, rt, pc);
 				continue;
@@ -300,33 +310,33 @@ int main(int argc, char *argv[])
 				*cycles += 1;
 				irqhandler(pc, cycles);
 			}
-			else{ LogTrace(fptrace, lines[*pc], pc); //registers[1] = 0;
+			else{ LogTrace(fptrace, lines[*pc], pc);
 			}
 			*pc += 1;
 			switch (op_num)
 			{
 			case 9:
-				printf("the opcode is beq\n");
+				
 				beq(registers, rd, rs, rt, pc);
 				break;
 			case 10:
-				printf("the opcode is bne\n");
+				
 				bne(registers, rd, rs, rt, pc);
 				break;
 			case 11:
-				printf("the opcode is blt\n");
+				
 				blt(registers, rd, rs, rt, pc);
 				break;
 			case 12:
-				printf("the opcode is bgt\n");
+				
 				bgt(registers, rd, rs, rt, pc);
 				break;
 			case 13:
-				printf("the opcode is ble\n");
+				
 				ble(registers, rd, rs, rt, pc);
 				break;
 			case 14:
-				printf("the opcode is bge\n");
+				
 				bge(registers, rd, rs, rt, pc);
 				break;
 			default:
@@ -335,11 +345,7 @@ int main(int argc, char *argv[])
 		}
 		if (op_num == 17 || op_num == 18 || op_num == 20)
 		{
-			//if (rd == 0)
-			//{
-			//	*cycles += 1;
-			//	irqhandler(pc, cycles);
-			//}
+			
 			if (rs == 1 || rt == 1) // R[rs] or R[rt] are $imm, so the instruction is in I-format
 			{
 				// we still need to read the next line ($imm value)
@@ -358,18 +364,18 @@ int main(int argc, char *argv[])
 			switch (op_num)
 			{
 			case 17:
-				printf("the opcode is sw\n");
+				
 				*cycles += 1;
 				irqhandler(pc, cycles);
 				sw(registers, rammemory, rd, rs, rt);
 				break;
 			case 18:
-				printf("the opcode is reti\n");
-				//registers[1] = 0;
+				
+				
 				reti(registers, ioregisters, rd, rs, rt, pc);
 				break;
 			case 20:
-				printf("the opcode is out\n");
+				
 				out(registers, ioregisters, rd, rs, rt);
 				fprintf(hwfile, "%d WRITE %s %08X\n", *cycles, ioregname(registers[rs] + registers[rt]), registers[rd]);
 				break;
@@ -380,10 +386,10 @@ int main(int argc, char *argv[])
 
 		irqhandler(pc, cycles);
 		// Logs and end of process stage
-		LedLog(cycles, argv[LEDS]);
-		sevensegmenttoLog(cycles, argv[DISPLAY7SEG]);
+		LedLog(cycles, ledlog);
+		sevensegmenttoLog(cycles, sevenseg);
 		triggermon();
-
+		hdmanager(diskcyc);
 	}
 	
 		shutdownmethods(argv, cycles,lines);
@@ -395,7 +401,7 @@ int main(int argc, char *argv[])
 FILE* read_file(char filename[], char chmod)
 {
 	static FILE *fpointer;
-	//fpointer = fopen(filename, "r");
+	
 
 	fpointer = fopen(filename, chmod);
 	if (fpointer == NULL)
@@ -424,38 +430,24 @@ char* substr(const char *src, int strt, int end)
 	strncpy(dst, (src + strt), len);
 	return dst;
 }
-void updatecyc(char type, char* cmd, int* cycles)
+
+void LedLog(int *cycles, FILE* filename)
 {
-	if (type == 'R')
-	{
-		*cycles += 1;
-	}
-	if (type == 'I')
-	{
-		*cycles += 2;
-	}
-	if (strcpy(cmd,"lw")==0 || strcpy(cmd, "sw") == 0)
-	{
-		*cycles += 1;
-	}
-}
-void LedLog(int *cycles, char *filename)
-{
-	if (ioregisters[LEDS] != oldledstate)
+	if (ioregisters[LEDS] != oldledstate)//if value changed
 	{
 		char* line = (char*)malloc(sizeof(char) * 500);
 		if (line == NULL) {
 			exit(1);
 		}
-		sprintf(line, "%d %08X\n", *cycles, ioregisters[LEDS]);
-		//fprintf(fp_leds, "%u %08x\n", ioreg[8], ioreg[9]);
-		write_file(filename, line);
+		fprintf(filename, "%d %08X\n", *cycles, ioregisters[LEDS]);
+
 		oldledstate = ioregisters[LEDS];
 		free(line);
 	}
 }
 void CyclesLog(int *cycles, char *filename)
 {
+	//log cycles
 	char line[100];
 	FILE *fp = fopen(filename, "w+");
 
@@ -464,27 +456,28 @@ void CyclesLog(int *cycles, char *filename)
 		fprintf(fp, line);
 		// close file
 		fclose(fp);
-		//write_file(filename, line);
-		//free(line);
+
 }
-void sevensegmenttoLog(int *cycles, char *filename)
+void sevensegmenttoLog(int *cycles, FILE* filename)
 {
 	unsigned int cursegval = ioregisters[DISPLAY7SEG];
-	if (cursegval != oldsegval)
+	if (cursegval != oldsegval)//if value changed
 	{
 		char* line = (char*)malloc(sizeof(char) * 500);
 		if (line == NULL) {
 			exit(1);
 		}
 
-		sprintf(line, "%d %08X\n", *cycles, cursegval);
-		write_file(filename, line);
+		
+		fprintf(filename, "%d %08X\n", *cycles, cursegval);
+		
 		oldsegval = cursegval;
 		free(line);
 	}
 }
 void writeval2mon()
 {
+	//manages monitor writing
 	unsigned char val = ioregisters[MONITORDATA];
 	unsigned int ofst = ioregisters[MONITORADDR];
 
@@ -493,16 +486,17 @@ void writeval2mon()
 void triggermon()
 {
 	//check if need to write val to mon
-	unsigned int boolwritemon = ioregisters[MONITORCMD];//// check again unsigned!!!!!!!!!
+	unsigned int boolwritemon = ioregisters[MONITORCMD];
 	if (boolwritemon)
 	{
 		writeval2mon();
-		ioregisters[MONITORCMD] = 0;//////is it ok in the if?????????????????
+		ioregisters[MONITORCMD] = 0;
 	}
 
 }
 void shutdownmethods(char* argv[], unsigned long long cycles, char** lines)
 {
+	//logs and closings
 	CyclesLog(cycles, argv[CYCLES]);
 	logdrivetofile(argv[DISKOUT]);
 	writeLogMon(argv[MONITOR_YUV], argv[MONITOR]);
@@ -510,7 +504,9 @@ void shutdownmethods(char* argv[], unsigned long long cycles, char** lines)
 	logregout(registers, argv[REGOUT]);
 	fclose(fptrace);
 	fclose(hwfile);
-	//////////remember to open and close file add file pointers!!!!!!!!!11!!!!!!!!!!@#$%^&
+	fclose(ledlog);
+	fclose(sevenseg);
+	
 }
 void triggertimer() 
 {
@@ -531,7 +527,8 @@ void triggertimer()
 }
 void set_irq2_arr(char* file_path)
 {
-	FILE* fp=fopen(file_path, "r");    //fopen_s!!!!!!********************************************
+	//build list of irq2s
+	FILE* fp=fopen(file_path, "r");    
 
 	size_t line_size = 255;
 	char* line = malloc(line_size);
@@ -553,16 +550,9 @@ void set_irq2_arr(char* file_path)
 }
 void check_irq2arr(int *cycles)
 {
+	//checks if there is irq2
 	for (int i = 0; i < irq2arrlen; i++)
 	{
-		//if (*cycles < 102 && *cycles>100)
-		//{
-		//	char a = 'c';
-		//}
-		//if (*cycles<205&&*cycles>195)
-		//{
-		//	char a = 'c';
-		//}
 		if (irq2arr[i] == *cycles)
 		{
 			ioregisters[IRQ2STS] = 1;
@@ -572,7 +562,7 @@ void check_irq2arr(int *cycles)
 }
 void irqhandler(int* pc, int *cycles)
 {
-///////////////////////////////////////////remember to add to retri!!!!*****************
+//manages irqs
 	if (interuptflag == 1)
 	{
 		return;
@@ -583,28 +573,14 @@ void irqhandler(int* pc, int *cycles)
 	
 	//updating interuption station
 	irqstat = ((ioregisters[0] && ioregisters[3]) || (ioregisters[1] && ioregisters[4]) || (ioregisters[2] && ioregisters[IRQ2STS]));
-	if (irqstat==1)////check one!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	if (irqstat==1)
 	{
 		interuptflag = 1;
 		ioregisters[IRQRETURN] = *pc;
-		*pc = 0xFFF&ioregisters[IRQHANDLER]; //12 bits so we don't overflow
+		*pc = 0xFFF&ioregisters[IRQHANDLER]; //12 bits so no overflow
 	}
 }
-//////////check if redundant!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//void outputdisc(char* outputfile) 
-//{
-//	// write disc data to file
-//	int i = 0;int j = 0;
-//	FILE* f = fopen(outputfile, "w+");
-//	for (int i = 0; i < SECTOR_SIZE; i++)
-//	{
-//		for (int j = 0; j < SECTOR_COUNT; j++)
-//			{
-//				fprintf(f,"%05x\n",hardrive[i][j]);/////////////////////////////5 or 2?
-//			}
-//	}
-//	fclose(f);
-//}////////////////////////redundant??!!!!!
+
 void inputdisc(char* inputfile) {
 	// read memory from file into an array 
 	int i = 0;
@@ -612,18 +588,23 @@ void inputdisc(char* inputfile) {
 	int val;
 	FILE* f = fopen(inputfile, "r");
 	char buf_array[MAX_INPUT_LINE];
-	while (fgets(buf_array,(MAX_INPUT_LINE-1), f))
+	
+	while (fgets(buf_array,(MAX_INPUT_LINE +1), f))
 	{
-		buf_array[strcspn(buf_array,"\n")]=0;
+		buf_array[strcspn(buf_array,"\n")];
 		touppers(buf_array);
 		
-		val = strtoul(buf_array, NULL, 16);
-		hardrive[i][j] = val;
-		j = ((j+1)%SECTOR_COUNT);
-		if (j == 0)
+		for (int i = 0; i < SECTOR_SIZE; i++)
 		{
-			i = ((i+1)%SECTOR_SIZE);
+			
+			val = char_in_hex_to_int(buf_array[i]); 
+			hardrive[j][i] = val;
+			
 		}
+
+		j += 1;
+
+	
 	}
 	fclose(f);
 }
@@ -646,52 +627,55 @@ void touppers(char *str)
 void logdrivetofile(char* fileName) 
 {
 	// write drive to file
-	int totsize = SECTOR_SIZE*SECTOR_COUNT;
+	int totsize = sizeof(hardrive) / sizeof(hardrive[0]);
 	FILE* fp;
 	fp = fopen(fileName, "w+");
 	for (int i = 0; i<totsize;i++)
 	{
-		fprintf(fp,"%05X\n",hardrive[i/SECTOR_SIZE][i%SECTOR_SIZE]);
+		fprintf(fp,"%01X%01X%01X%01X%01X\n",hardrive[i][0], hardrive[i][1], hardrive[i][2], hardrive[i][3], hardrive[i][4]);
 	}
 	fclose(fp);
 }
-int hdmanager(int rammemory[], int diskcyc)
+void hdmanager(int* diskcyc)
 {
 	int disksectorid;
 	int disksubsectorid;
 	int  memory_id;
 	//check if command exists
-	if (ioregisters[DISKCMD] != 0)
+	if ((ioregisters[DISKCMD] != 0) && (*diskcyc == 0))
 	{
-		// sets disk to bussy. diskstatus to 1
-		ioregisters[DISKSTS] = 1;
-		// 1024/128 = 8 cycles
-		// read or write every 8 cycles 
-		//needs to wait 1024 cycles and each sector size is 128
-		if (diskcyc%8==0)
+		if (ioregisters[DISKSTS] == 0)
 		{
-			memory_id=(ioregisters[DISKBFR]+(diskcyc/8))%LINES_MAX_SIZE;
-			disksectorid = ioregisters[DISKSECTOR]%SECTORS;
-			disksubsectorid =(diskcyc /8)%SECTOR_SIZE;
-			// if diskcmd = 1 its a read command
+			// sets disk to bussy. diskstatus to 1
+			ioregisters[DISKSTS] = 1;
+			
+
+				// if diskcmd = 1 its a read command
 			if (ioregisters[DISKCMD] == 1)
 			{
-				rammemory[memory_id] = hardrive[disksectorid][disksubsectorid];
+				for (int i = 0; i < 128; i++)
+				{
+					rammemory[ioregisters[DISKBFR] + i] = hardrive[ioregisters[DISKSECTOR]][i];
+				}
 			}
 			// if diskcmd = 2 its a write command
-			else				
+			else
 			{
-				hardrive[disksectorid][disksubsectorid] = rammemory[memory_id];
+				for (int i = 0; i < 128; i++)
+				{
+					hardrive[ioregisters[DISKSECTOR]][i] = rammemory[ioregisters[DISKBFR] + i];
+				}
 			}
 		}
-		if (diskcyc < (DISK_CYCLES - 1))
+	}
+		else if ((*diskcyc) < (DISK_CYCLES - 1))
 		{
-			diskcyc++;
+			(*diskcyc)++;
 		}
 		else
 		{
 			//reseting everything
-			diskcyc = 0;
+			(*diskcyc) = 0;
 			// set irq1sts = 1 and trigger irq
 			ioregisters[IRQ1STS] = 1;	
 			// set diskcmd to 0 so there is no active command
@@ -699,9 +683,9 @@ int hdmanager(int rammemory[], int diskcyc)
 			// set diskstatus to 0 and free disk to work
 			ioregisters[DISKSTS] = 0;	
 		}
-	}
-	return diskcyc;
 }
+	
+
 //getting the index of last line in memory which !=0
 int lastindexinmem(int memory[])
 {

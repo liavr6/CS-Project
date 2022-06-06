@@ -33,72 +33,7 @@ void destry_label(label* x)
 
 int main(int argc, char *argv[])
 {
-#pragma region poc
 
-	// Test to validate of file num from input command.
-	/*if (argc != 4) {
-		printf("Error: incorrect number of input files - 4 required\nExiting.");
-		exit(1);
-	}*/
-
-	/*
-
-	char a[] = "	add $t2, $zero, $imm, 1				# $t2 = 1";
-	char test_label[] = "fib:allaakbar";
-	char *copy_this = test_label;
-
-	size_t size2 = strlen(copy_this);
-
-	//find label poc
-	char* chartest = (char*)malloc(sizeof(*chartest)*(size2 + 1));
-	strcpy(chartest, copy_this);
-
-	int pc = 0;	
-	remove_char(test_label, ':');
-
-	label* test = (label*)malloc(sizeof(label));
-	memset(test, 0, sizeof*(test));
-
-	test->name = chartest;
-	test->pc = pc;
-
-	label** testa = (label**)malloc(sizeof(label*));
-	if (testa == NULL)
-	{
-		exit(1);
-	}
-	testa = malloc(0);
-	for (int i = 0; i < 10; i++)
-	{
-		testa = AddLabelToArray(testa, i, test_label, i);
-	}
-
-	//read file poc
-	FILE* fp = NULL;
-	char rfname[] = "..\\fib.asm";//relative path of file to read
-	fp = read_file(rfname,"r");
-
-	char line[500];
-	char fname[] = "test1.txt";
-	fclose(fopen(fname, "w+"));
-	while (fgets(line, sizeof(line), fp)) {
-		printf("%s", line);
-		//write to file poc
-		write_file(fname, line);
-	}
-	fclose(fp);
-
-	//split poc
-	int size;
-	char** splits1 = split(a, &size, ',');
-	for (int i = 0; i < size; i++)
-	{
-		printf("%s ",splits1[i]);
-	}
-	//dont forget to free the splits later
-
-	*/
-#pragma endregion
 		// Test to validate of file num from input command.
 	argc = 3;
 	argv[0] = "program.exe";
@@ -108,9 +43,7 @@ int main(int argc, char *argv[])
 		printf("Error: incorrect number of input files - 3 required\nExiting.");
 		exit(1);
 	}
-	//char rfname[1024] = { 0 };
-	//strcpy(rfname, argv[1]);
-	// label** labelsarray = (label**)malloc(sizeof(label*));
+
 	label** labelsarray = (label**)malloc(0);
 	if (labelsarray == NULL) { exit(1); }
 	int labelnum = find_labels(argv[1], &labelsarray);
@@ -121,13 +54,7 @@ int main(int argc, char *argv[])
 	free_array(labelsarray, labelnum);
 
 
-	/*1.read_file(asm) v
-	2.find_labels(file) v
-	3.create_memin(file,labels) v
-	4.free memory v */
 }
-
-#pragma region shit
 
 //removes unwanted chars from the strin
 void remove_char(char *str, char target)
@@ -170,7 +97,6 @@ char** split(char* mainstring, int* size_top_arr, char del)
 FILE* read_file(char filename[], char chmod)
 {
 	static FILE *fpointer;
-	//fpointer = fopen(filename, "r");
 
 	fpointer = fopen(filename, chmod);
 	if (fpointer == NULL)
@@ -184,13 +110,7 @@ FILE* read_file(char filename[], char chmod)
 //function to write output files
 void write_file(FILE *fp, char *strtowrite)
 {
-	// open file for writing
-	//if (fp == NULL)
-	//{
-	//	fp = fopen(filename, "wb");
-	//	//printf("Error opening file %s", filename);
-	//	//return 1;
-	//}
+
 	// write to text file
 	fprintf(fp, "%s\n", strtowrite);
 
@@ -215,8 +135,7 @@ word** AddWordToArray(word** wordarr, int array_size, int place, int val) {
 	word* nword = (word*)malloc(sizeof(word));
 	nword->place = place;
 	nword->val = val;
-	//nword->name = (char*)malloc(strlen(labelname) + 1);
-	//strcpy(nlabel->name, labelname);
+
 	wordarr = (word**)realloc(wordarr, sizeof(label*)*(array_size + 1));
 	wordarr[array_size] = nword;
 	return wordarr;
@@ -232,7 +151,7 @@ int find_labels(char* file_name, label*** labels)
 	fp1 = fopen(file_name, "r");
 
 	if (fp1 == NULL) {
-		printf("kaki");//delete
+		printf("Error");
 		return;
 	}
 	while (fgets(line, 100, fp1) != NULL)
@@ -294,64 +213,49 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 {
 	int size;
 	char line[500] = { "0" };
-	char memin_line[1000] = { NULL };//initialize again in the while******
-	char temp[1000] = { NULL };//initialize again in the while******
+	char memin_line[1000] = { NULL };
+	char temp[1000] = { NULL };
 	char* imm;
 	int writtenlines = 0;
 	FILE *fp1;
 	fp1 = fopen(in_file_name, "r");
 	if (fp1 == NULL) {
-		printf("kaki");
+		printf("Error");
 		return;
 	}
 
 	FILE *fp2 = fopen(out_file_name, "w");
 	if (fp2 == NULL) {
 		fclose(fp1);
-		printf("kaki2");
+		printf("Error");
 		return;
 	}
 	int word = 0;
 	char str[6] = "00000";
-	// sprintf(str, "%05d", 0);
 	strcat(memin_line, str);
 	char** splited_line = split(line, &size, ',');
 	bool alpha = false;
 	int labelindex = 0;
-	//added formating to 8 letters - need to assimilate
 	static char hexVal[3];
 	static char nhexVal[5];
 
 	int resultop=0;
+	int isresr = -1;
 	int resultreg = 0;
 	char resultopstr[1000] = "";
 	bool terf = false;
 	label** wordsa = (label**)malloc(0);
 	if (wordsa == NULL) { exit(1); }
-	//word *nword;
-	while (fgets(line, 100, fp1) != NULL)//change 100??
+	//main loop
+	while (fgets(line, 100, fp1) != NULL)
 	{
 		strcpy(temp, "00000");
 		splited_line = split(line, &size, ',');
 		terf = false;
-
-			terf = strstr(line, ".word");//consider removing this part*******************************!!!!
-			if (terf)
+		isresr = -1;
+			terf = strstr(line, ".word");
+			if (terf)//checks if word
 			{
-				/*int ind = atoi(splited_line[1]);
-				if (writtenlines < (ind))
-				{
-					while (writtenlines < (ind))
-					{
-						write_file(fp2, "00000");
-						writtenlines++;
-					}
-					sprintf(nhexVal, "%05X", atoi(splited_line[2]));
-					strcpy(memin_line, nhexVal);*/
-				//AddWordToArray(wordsa, word, atoi(splited_line[1]), atoi(splited_line[2]));
-			 //nword = (word*)malloc(sizeof(word));
-				//nword->place = atoi(splited_line[1]);
-				//nword->val = atoi(splited_line[2]);
 				fflush(fp2);
 				int left, right;
 				if (strstr(splited_line[1], "0x"))
@@ -374,24 +278,23 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 					word++;
 				
 			}
-			if (!terf)
+			if (!terf)//if not word
 			{
 				if (size > 1)
 				{
-					resultop = is_str_in_array(opcodes, splited_line[0], 22);
+					resultop = is_str_in_array(opcodes, splited_line[0], 22); 
+					isresr = is_str_in_array(Rop, splited_line[0], 12);
 					if (resultop == 18)
 					{
 						bool a = true;
 					}
-					if (resultop != -1)
+					if (resultop != -1)//valid
 					{
 						sprintf(resultopstr, "%d", resultop);
-						// resultopstr = _itoa(resultop, temp, 10);
 						sprintf(hexVal, "%02X", resultop);
 						strcpy(temp, hexVal); // copies the decimal value of opcode to temp
-						//strcpy(temp, _itoa(is_str_in_array(opcodes, splited_line[0], 22), temp, 10)); // copies the decimal value of opcode to temp
-						strcpy(memin_line, temp);													  // concatanate the register number to memin_line
-						printf("%s\n", memin_line);
+						 // copies the decimal value of opcode to temp
+						strcpy(memin_line, temp); // concatanate the register number to memin_line
 					}
 					for (int i = 1; i < (size - 1); i++)
 					{
@@ -401,8 +304,7 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 							strcpy(temp, _itoa(resultreg, temp, 10)); // copies the decimal value of register to temp
 							sprintf(hexVal, "%01X", resultreg);
 							strcpy(temp, hexVal);
-							strcat(memin_line, temp);														// concatanate the register number to memin_line
-							printf("%s\n", memin_line);
+							strcat(memin_line, temp);	// concatanate the register number to memin_line
 						}
 					}
 
@@ -415,7 +317,7 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 					ret = strstr(splited_line[size - 1], "0x");
 					for (int ind = 0; ind < strlen(splited_line[size - 1]); ind++)
 					{
-						if (isalpha(splited_line[size - 1][ind])&&!ret)//////add part to test if there is a minus sign
+						if (isalpha(splited_line[size - 1][ind])&&!ret)
 						{
 							alpha = true;
 							break;
@@ -423,21 +325,28 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 					}
 					if (!alpha)
 					{
-						/*if (strstr(splited_line[size - 1], "0x"))*/
+				
 						if (ret)
 						{
 							imm = cleanhex(splited_line[size - 1]);
 						}
 						else
 						{
-							imm = tohex(atoi(splited_line[size - 1]));;//check for mem leak!!!!
+							imm = tohex(atoi(splited_line[size - 1]));
 						}
-						//sprintf(str, "%05d", atoi(splited_line[size]));
+					
 						for (int i = 0; i < size; i++)
 						{
+							if (isresr != -1)
+							{
+								if (i == 1)
+								{
+									continue;//r type
+								}
+							}
 							if (strcmp(splited_line[i], "$imm") == 0)
 							{
-								strcpy(memin_line, "");
+								strcpy(memin_line, "");//i type
 								strcpy(memin_line, imm);
 
 								if (!strstr(line, ".word"))
@@ -449,23 +358,29 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 							}
 						}
 					}
-					if (alpha)
+					if (alpha)//theres a label at the final cell
 					{
 						if (labels[0] != NULL)
 						{
 							labelindex = is_lbl_in_array(labels, splited_line[size - 1], labelnum);
 							if (labelindex != -1)
 							{
-								//	immflag = split(line, &z, ',');
 								for (int i = 0; i < size; i++)
 								{
+									if (isresr != -1)
+									{
+										if (i == 1)
+										{
+											continue;//r type
+										}
+									}
 									if (strcmp(splited_line[i], "$imm") == 0)
 									{
-										strcpy(memin_line, "");
+										strcpy(memin_line, "");//i type
 										break;
 									}
 								}
-								imm = tohex(labels[labelindex]->pc);//check for mem leak!!!!
+								imm = tohex(labels[labelindex]->pc);
 								strcat(memin_line, imm);
 
 
@@ -482,15 +397,7 @@ void create_memin(char* opcodes[22], char* registers[16], char* in_file_name, ch
 							return -1;
 					}
 					alpha = false;
-					/* 1.format the second line of the input to 8 letters v
-					2.initialize the arrays in the while v
-					3.remove cat line 236 ?
-					4.add func part to address labels and add their pc in the text
-					5.adapt to work with new code: read file and write file v */
 
-
-					// write memin_line to file.
-					// initialize memin_line,temp at the end of a while iteration.
 				}
 			}
 	}
@@ -519,9 +426,7 @@ char* tohex(int num)
 	if (num < 0) //deal if num is negatived
 	{
 		sprintf(hexVal, "%08X", num);
-		//shorthexVal = substr(hexVal, 3, 8);
 		strncpy(shorthexVal, hexVal + 3, 8);
-		//shorthexVal += '\0';
 		return shorthexVal;
 	}
 	else//if positive
@@ -532,6 +437,7 @@ char* tohex(int num)
 }
 int wordhandle(char* file_name, int place, int val)
 {
+	//manages the placement of wanted word in place
 	FILE *file = fopen(file_name, "r+");
 
 	fseek(file, 0, SEEK_END);
@@ -554,88 +460,7 @@ int wordhandle(char* file_name, int place, int val)
 	fclose(file);
 	return val;
 }
-//
-//	/* File pointer to hold reference of input file */
-//	FILE * fp;
-//	FILE * ft;
-//	
-//	char buffer[1000];
-//	char newline[1000];
-//	int line, count;
-//	int wordn = 0;
-//	/*printf("Enter line number to replace: ");
-//	scanf("%d", &line);
-//	printf("Replace '%d' line with: ", line);
-//	fgets(newline, 1000, stdin);*/
-//	char hexv[6];
-//	/*  Open required files */
-//	fp = fopen(file_name, "a");
-//	ft = fopen("replace.txt", "w");
-//	count = 0;
-//	//size_t n = sizeof(words) / sizeof(words[0]);
-//	//n = 2;
-//	char chr;
-//	FILE *fileptr = fopen(file_name, "r");
-//	//extract character from file and store in chr
-//	chr = getc(fileptr);
-//	while (chr != EOF)
-//	{
-//		//Count whenever new line is encountered
-//		if (chr == '\n')
-//		{
-//			count++;
-//		}
-//		//take next character from file.
-//		chr = getc(fileptr);
-//	}
-//	fclose(fileptr); //close file
-//
-//		/*while (wordn<n)
-//		{*/
-//			while (count < (place)+1)
-//			{
-//				fprintf(fp, "%s", "00000\n");
-//				//write_file(fp, "00000");
-//				count++;
-//			}
-//			fclose(fp);
-//			fp = fopen(file_name, "r");
-//
-//			if (fp != NULL || ft != NULL)
-//			{
-//			sprintf(hexv, "%05X",val);
-//			line = place;
-//			strcpy(newline, hexv);
-//			strcat(newline, "\n");
-//
-//			count = 0;
-//			while ((fgets(buffer, 1000, fp)) != NULL)
-//			{
-//				if (count == line)
-//				{
-//					count++;
-//					//write_file(ft, newline); 
-//					fprintf(ft, "%s\n", newline);
-//					fclose(ft);
-//				}
-//				else
-//				{
-//					count++;
-//					//write_file(ft, buffer);
-//					fprintf(ft, "%s\n", buffer);
-//				}
-//			}
-//
-//			wordn++;
-//		//}
-//			fclose(fp);
-//			fclose(ft);
-//			remove(file_name);
-//			rename("replace.txt", file_name);
-//		return 0;
-//	}			
-//
-//}
+
 void free_array(label** labels, int labelnum)
 {
 	for (int i = 0; i < labelnum; i++) {
@@ -645,13 +470,13 @@ void free_array(label** labels, int labelnum)
 	free(labels);
 }
 
-
 char* cleanhex(char* num)
 {
+	//turns hex to hex in wanted format
+
 	int targetStrLen = 5;           //output length  
 	const char *padding = "00000";
 	
-	//static char cleanhexVal[6];
 	size_t n = sizeof(num) / sizeof(num[0]);
 	char *finalhexVal = (char*)malloc(sizeof(char) * (6));
 	char cleanhexVal[8];
@@ -681,4 +506,3 @@ void touppers(char *str)
 	}
 
 }
-#pragma endregion

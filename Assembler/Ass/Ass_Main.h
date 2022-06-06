@@ -11,6 +11,7 @@ typedef struct s_word {
 	int place;
 	int val;
 } word;
+char *Rop[12] = { "add", "sub", "mul", "and", "or", "xor", "sll", "sra", "srl", "jal", "lw", "in" };
 int wordhandle(char* file_name, int place,int val);
 word** AddWordToArray(word** wordarr, int array_size, int place, int val);
 char *opcodes[22] = { "add", "sub", "mul", "and", "or", "xor", "sll", "sra", "srl", "beq", "bne", "blt", "bgt", "ble", "bge", "jal", "lw", "sw", "reti", "in", "out", "halt" };
